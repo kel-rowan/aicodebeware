@@ -3,964 +3,737 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clash Tower Climb</title>
+    <title>Rogue Royale</title>
     <style>
         :root {
             --primary: #1e40af;
             --secondary: #7e22ce;
-            --accent: #f59e0b;
-            --light: #dbeafe;
+            --accent: #c2410c;
+            --success: #166534;
+            --danger: #991b1b;
+            --light: #f1f5f9;
             --dark: #0f172a;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --info: #3b82f6;
+            --card-bg: rgba(15, 23, 42, 0.7);
+            --border: rgba(96, 165, 250, 0.5);
         }
         
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         
         body {
-            background: linear-gradient(135deg, #0f172a, #1e293b);
-            color: white;
+            background: linear-gradient(135deg, #0c4a6e, #4c1d95);
+            color: var(--light);
             min-height: 100vh;
-            padding: 20px;
+            padding: 1rem;
         }
         
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header { text-align: center; padding: 1rem 0; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .subtitle { color: #bfdbfe; font-size: 1rem; }
         
-        header {
-            text-align: center;
-            padding: 20px 0;
-            margin-bottom: 30px;
-        }
-        
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+        .stats-bar {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
         }
         
-        .subtitle {
-            color: #94a3b8;
-            font-size: 1.2rem;
-        }
+        .stat-item { display: flex; align-items: center; gap: 0.5rem; }
+        .stat-value { font-weight: bold; }
         
         .game-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 20px;
+            gap: 1rem;
         }
         
-        @media (min-width: 992px) {
-            .game-grid {
-                grid-template-columns: 1fr 2fr;
-            }
+        @media (min-width: 1024px) {
+            .game-grid { grid-template-columns: 1fr 2fr; }
         }
         
         .card {
-            background: rgba(30, 41, 59, 0.7);
-            border: 1px solid #334155;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-        }
-        
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #334155;
-        }
-        
-        .card-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .card-content {
-            padding: 10px 0;
-        }
-        
-        .stats {
-            margin-bottom: 20px;
-        }
-        
-        .stat {
-            margin-bottom: 15px;
-        }
-        
-        .stat-label {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-        }
-        
-        .progress-bar {
-            height: 10px;
-            background: #334155;
-            border-radius: 5px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
             overflow: hidden;
         }
         
-        .progress-fill {
-            height: 100%;
-            border-radius: 5px;
-        }
+        .card-header { padding: 0.75rem; border-bottom: 1px solid var(--border); }
+        .card-title { font-size: 1.25rem; font-weight: bold; }
+        .card-content { padding: 1rem; }
         
-        .health-fill {
-            background: var(--danger);
-        }
-        
-        .floor-fill {
-            background: var(--success);
-        }
-        
-        .btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-        
-        .btn-primary:hover:not(:disabled) {
-            background: #2563eb;
-            transform: translateY(-2px);
-        }
-        
-        .btn-secondary {
-            background: var(--secondary);
-            color: white;
-        }
-        
-        .btn-secondary:hover:not(:disabled) {
-            background: #9333ea;
-            transform: translateY(-2px);
-        }
-        
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--primary);
-            color: var(--primary);
-        }
-        
-        .btn-outline:hover:not(:disabled) {
-            background: var(--primary);
-            color: white;
-        }
-        
-        .battle-area {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        
-        .fighters {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 20px 0;
-        }
-        
-        .fighter {
-            text-align: center;
-            width: 120px;
-        }
-        
-        .fighter-icon {
-            width: 80px;
-            height: 80px;
-            background: #334155;
-            border-radius: 50%;
-            margin: 0 auto 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-        }
-        
-        .fighter-health {
-            margin-top: 10px;
-        }
-        
-        .vs {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--accent);
-        }
-        
-        .deck-container {
-            margin-top: 20px;
-        }
-        
-        .deck-title {
-            font-size: 1.2rem;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .deck {
+        .deck-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
         }
         
         .card-item {
-            background: #334155;
-            border-radius: 8px;
-            padding: 12px;
+            background: rgba(30, 64, 175, 0.3);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
             cursor: pointer;
             transition: all 0.2s ease;
-            border: 2px solid transparent;
         }
         
-        .card-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
+        .card-item:hover { background: rgba(30, 64, 175, 0.5); transform: translateY(-2px); }
+        .card-item.selected { background: rgba(30, 64, 175, 0.7); border-color: #fbbf24; box-shadow: 0 0 0 2px #fbbf24; }
         
         .card-header-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
         }
         
-        .card-name {
-            font-weight: 600;
-            font-size: 0.9rem;
+        .card-name { font-weight: bold; font-size: 0.9rem; }
+        .card-cost { background: var(--primary); border-radius: 9999px; padding: 0.1rem 0.4rem; font-size: 0.7rem; }
+        .card-stats { display: flex; justify-content: space-between; margin-top: 0.3rem; font-size: 0.8rem; }
+        .stat { display: flex; align-items: center; gap: 0.2rem; }
+        .card-description { font-size: 0.7rem; color: #bfdbfe; margin-top: 0.3rem; }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-top: 0.75rem;
         }
         
-        .card-type {
-            font-size: 0.7rem;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 2px 6px;
-            border-radius: 4px;
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover:not(:disabled) { background: #2563eb; transform: translateY(-2px); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #15803d; transform: translateY(-2px); }
+        .btn-secondary { background: #4b5563; color: white; }
+        .btn-secondary:hover { background: #374151; transform: translateY(-2px); }
+        
+        .health-bar {
+            height: 0.4rem;
+            background: #374151;
+            border-radius: 0.2rem;
+            overflow: hidden;
+            margin-top: 0.3rem;
         }
         
-        .card-stats {
+        .health-fill {
+            height: 100%;
+            background: #ef4444;
+            border-radius: 0.2rem;
+        }
+        
+        .battle-arena {
             display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
+            justify-content: space-around;
+            align-items: center;
+            margin: 1rem 0;
+            text-align: center;
         }
         
-        .common { border-color: #94a3b8; }
-        .rare { border-color: #60a5fa; }
-        .epic { border-color: #a78bfa; }
-        .legendary { border-color: #fbbf24; }
+        .fighter {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .fighter-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 0.3rem;
+        }
+        
+        .player-icon { background: rgba(30, 64, 175, 0.5); }
+        .enemy-icon { background: rgba(126, 34, 206, 0.5); }
         
         .battle-log {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            padding: 15px;
-            height: 200px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            height: 8rem;
             overflow-y: auto;
-        }
-        
-        .log-entry {
-            padding: 8px 0;
-            border-bottom: 1px solid #334155;
-        }
-        
-        .log-entry:last-child {
-            border-bottom: none;
-        }
-        
-        .victory-screen, .defeat-screen {
-            text-align: center;
-            padding: 30px 0;
-        }
-        
-        .result-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-        }
-        
-        .victory {
-            color: var(--success);
-        }
-        
-        .defeat {
-            color: var(--danger);
-        }
-        
-        .reward-cards {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-        
-        .reward-card {
-            width: 100px;
-            background: #334155;
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-        }
-        
-        .reward-card-name {
+            margin: 0.75rem 0;
             font-size: 0.8rem;
-            margin-top: 5px;
         }
         
-        .reward-card-rarity {
-            font-size: 0.7rem;
-            margin-top: 3px;
-        }
+        .log-entry { margin-bottom: 0.2rem; }
         
-        .common-bg { background: #94a3b8; }
-        .rare-bg { background: #60a5fa; }
-        .epic-bg { background: #a78bfa; }
-        .legendary-bg { background: #fbbf24; }
-        
-        footer {
+        .results-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             text-align: center;
-            padding: 30px 0;
-            color: #94a3b8;
+            padding: 1.5rem;
+        }
+        
+        .results-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+        .results-title { font-size: 1.5rem; margin-bottom: 0.75rem; }
+        .results-text { margin-bottom: 1rem; max-width: 25rem; }
+        .results-buttons { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
+        
+        .welcome-screen { padding: 1.5rem; text-align: center; }
+        .welcome-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+        
+        .instructions {
+            background: rgba(30, 64, 175, 0.3);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            text-align: left;
             font-size: 0.9rem;
         }
         
-        .boss-indicator {
-            color: var(--accent);
-            font-weight: bold;
-        }
+        .instructions h3 { margin-bottom: 0.75rem; text-align: center; }
+        .instructions ul { padding-left: 1.2rem; }
+        .instructions li { margin-bottom: 0.3rem; }
+        
+        .deck-preview { margin-top: 1rem; }
+        .preview-title { font-size: 1.1rem; margin-bottom: 0.75rem; text-align: center; }
+        .preview-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+        .preview-card { background: rgba(30, 64, 175, 0.5); border: 1px solid rgba(96, 165, 250, 0.5); border-radius: 0.5rem; padding: 0.5rem; width: 6rem; }
+        
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🏰 Clash Tower Climb</h1>
-            <p class="subtitle">Climb the tower, collect cards, and defeat bosses!</p>
+            <h1>Rogue Royale</h1>
+            <p class="subtitle">A Rogue-like Clash Royale Experience</p>
         </header>
         
+        <div class="stats-bar">
+            <div class="stat-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <span class="stat-value">Score: <span id="score-value">0</span></span>
+            </div>
+            <div class="stat-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <span class="stat-value">Level: <span id="level-value">1</span></span>
+            </div>
+            <div class="stat-item" id="mana-container">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                <span class="stat-value">Mana: <span id="mana-value">5</span></span>
+            </div>
+        </div>
+        
         <div class="game-grid">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">👤 Player Info</h2>
-                </div>
-                <div class="card-content">
-                    <div class="stats">
-                        <div class="stat">
-                            <div class="stat-label">
-                                <span>Floor</span>
-                                <span id="floor-number">1</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div id="floor-progress" class="progress-fill floor-fill" style="width: 20%"></div>
-                            </div>
-                            <div id="floor-info" class="stat-info">4 floors until next boss</div>
+            <div class="player-deck">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title" id="deck-title">Build Your Deck</h2>
+                    </div>
+                    <div class="card-content">
+                        <div id="deck-building">
+                            <p class="subtitle" style="margin-bottom: 0.75rem;">Select up to 8 cards for your deck</p>
+                            <div class="deck-grid" id="available-cards"></div>
+                            <button class="btn btn-primary" id="start-battle-btn" disabled>Start Battle</button>
                         </div>
                         
-                        <div class="stat">
-                            <div class="stat-label">
-                                <span>Health</span>
-                                <span id="player-health-value">1000/1000</span>
+                        <div id="battle-deck" class="hidden">
+                            <div class="stat-item" style="margin-bottom: 0.75rem;">
+                                <span class="stat-value">Health: <span id="player-health-value">100</span></span>
+                                <div class="health-bar">
+                                    <div class="health-fill" id="player-health-bar" style="width: 100%;"></div>
+                                </div>
                             </div>
-                            <div class="progress-bar">
-                                <div id="player-health-bar" class="progress-fill health-fill" style="width: 100%"></div>
-                            </div>
+                            <div class="deck-grid" id="player-cards"></div>
                         </div>
-                    </div>
-                    
-                    <div class="actions">
-                        <button id="battle-btn" class="btn btn-primary">⚔️ Battle</button>
-                        <button id="reset-btn" class="btn btn-outline">🔄 Reset Game</button>
                     </div>
                 </div>
             </div>
             
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title" id="battle-title">⚔️ Battle Arena</h2>
-                    <span id="floor-display">Floor 1</span>
-                </div>
-                <div class="card-content">
-                    <div id="idle-screen" class="battle-area">
-                        <div class="fighters">
-                            <div class="fighter">
-                                <div class="fighter-icon">👤</div>
-                                <h3>You</h3>
-                            </div>
-                            <div class="vs">VS</div>
-                            <div class="fighter">
-                                <div class="fighter-icon">👾</div>
-                                <h3 id="enemy-name">Enemy</h3>
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <p id="battle-info">A challenger approaches!</p>
-                            <button id="start-battle-btn" class="btn btn-primary">⚔️ Start Battle</button>
-                        </div>
+            <div class="battle-area">
+                <div class="card" id="battle-card">
+                    <div class="card-header">
+                        <h2 class="card-title">Welcome to Rogue Royale!</h2>
                     </div>
-                    
-                    <div id="battle-screen" class="battle-area" style="display: none;">
-                        <div class="fighters">
-                            <div class="fighter">
-                                <div class="fighter-icon">👤</div>
-                                <h3>You</h3>
-                                <div class="fighter-health">
-                                    <div class="stat-label">
-                                        <span>HP</span>
-                                        <span id="player-battle-health">1000/1000</span>
+                    <div class="card-content">
+                        <div id="welcome-screen" class="welcome-screen">
+                            <div class="welcome-icon">🏰</div>
+                            <p class="subtitle">Build your deck, battle enemies, and climb the leaderboard!</p>
+                            
+                            <div class="instructions">
+                                <h3>How to Play</h3>
+                                <ul>
+                                    <li>Select up to 8 cards for your deck</li>
+                                    <li>Battle enemies with your chosen cards</li>
+                                    <li>Manage your mana to play powerful cards</li>
+                                    <li>Defeat enemies to earn points and level up</li>
+                                </ul>
+                            </div>
+                            
+                            <button class="btn btn-primary" id="start-game-btn">Start Building Your Deck</button>
+                        </div>
+                        
+                        <div id="battle-screen" class="hidden">
+                            <div class="battle-arena">
+                                <div class="fighter">
+                                    <div class="fighter-icon player-icon">🧙</div>
+                                    <h3>You</h3>
+                                    <div class="stat-item">
+                                        <span class="stat-value">Health: <span id="player-battle-health">100</span></span>
                                     </div>
-                                    <div class="progress-bar">
-                                        <div id="player-battle-bar" class="progress-fill health-fill" style="width: 100%"></div>
+                                    <div class="health-bar">
+                                        <div class="health-fill" id="player-battle-health-bar" style="width: 100%;"></div>
+                                    </div>
+                                </div>
+                                
+                                <div style="font-size: 1.5rem;">⚔️</div>
+                                
+                                <div class="fighter">
+                                    <div class="fighter-icon enemy-icon">👹</div>
+                                    <h3>Enemy</h3>
+                                    <div class="stat-item">
+                                        <span class="stat-value">Health: <span id="enemy-health">100</span></span>
+                                    </div>
+                                    <div class="health-bar">
+                                        <div class="health-fill" id="enemy-health-bar" style="width: 100%;"></div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="vs">VS</div>
-                            <div class="fighter">
-                                <div class="fighter-icon">👾</div>
-                                <h3 id="battle-enemy-name">Enemy</h3>
-                                <div class="fighter-health">
-                                    <div class="stat-label">
-                                        <span>HP</span>
-                                        <span id="enemy-battle-health">0/0</span>
-                                    </div>
-                                    <div class="progress-bar">
-                                        <div id="enemy-battle-bar" class="progress-fill health-fill" style="width: 100%"></div>
-                                    </div>
-                                </div>
+                            
+                            <div class="battle-log" id="battle-log">
+                                <div class="log-entry">Welcome to battle! Select a card to play.</div>
+                            </div>
+                            
+                            <div class="deck-grid" id="enemy-cards"></div>
+                        </div>
+                        
+                        <div id="results-screen" class="hidden results-screen">
+                            <div class="results-icon" id="results-icon">🏆</div>
+                            <h2 class="results-title" id="results-title">Victory!</h2>
+                            <p class="results-text" id="results-text">You defeated the enemy!</p>
+                            <div class="results-buttons">
+                                <button class="btn btn-success" id="next-level-btn">Next Level</button>
+                                <button class="btn btn-secondary" id="new-game-btn">New Game</button>
                             </div>
                         </div>
-                        
-                        <div class="deck-container">
-                            <h3 class="deck-title">🃏 Your Deck</h3>
-                            <div id="player-deck" class="deck">
-                                <!-- Cards will be inserted here -->
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div id="victory-screen" class="victory-screen" style="display: none;">
-                        <div class="result-icon">🎉</div>
-                        <h2 class="victory">Victory!</h2>
-                        <p id="victory-message">You defeated the enemy!</p>
-                        
-                        <h3>Rewards:</h3>
-                        <div id="reward-cards" class="reward-cards">
-                            <!-- Reward cards will be inserted here -->
-                        </div>
-                        
-                        <button id="collect-btn" class="btn btn-primary">Collect Cards ➡️</button>
-                    </div>
-                    
-                    <div id="defeat-screen" class="defeat-screen" style="display: none;">
-                        <div class="result-icon">💀</div>
-                        <h2 class="defeat">Defeat!</h2>
-                        <p id="defeat-message">You were defeated!</p>
-                        <button id="try-again-btn" class="btn btn-primary">Try Again</button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card" style="grid-column: 1 / -1;">
-                <div class="card-header">
-                    <h2 class="card-title">📜 Battle Log</h2>
-                </div>
-                <div class="card-content">
-                    <div id="battle-log" class="battle-log">
-                        <div class="log-entry">Welcome to Clash Tower Climb!</div>
-                        <div class="log-entry">You received a new deck for floor 1!</div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <footer>
-            <p>Clash Tower Climb - A Clash Royale-inspired tower climbing game</p>
-            <p>Climb floors, collect cards, and defeat bosses every 5 floors!</p>
-        </footer>
+        <div class="card deck-preview" id="deck-preview">
+            <div class="card-header">
+                <h2 class="card-title preview-title">Your Selected Cards</h2>
+            </div>
+            <div class="card-content">
+                <div class="preview-grid" id="preview-cards"></div>
+            </div>
+        </div>
     </div>
 
     <script>
         // Game data
-        const cardDatabase = [
-            { id: "goblin", name: "Goblin", damage: 80, health: 50, cost: 2, rarity: "common", type: "troop" },
-            { id: "archer", name: "Archer", damage: 70, health: 30, cost: 3, rarity: "common", type: "troop" },
-            { id: "knight", name: "Knight", damage: 60, health: 120, cost: 3, rarity: "common", type: "troop" },
-            { id: "giant", name: "Giant", damage: 120, health: 300, cost: 5, rarity: "rare", type: "troop" },
-            { id: "wizard", name: "Wizard", damage: 150, health: 80, cost: 5, rarity: "rare", type: "troop" },
-            { id: "fireball", name: "Fireball", damage: 200, health: 0, cost: 4, rarity: "rare", type: "spell" },
-            { id: "lightning", name: "Lightning", damage: 300, health: 0, cost: 6, rarity: "epic", type: "spell" },
-            { id: "prince", name: "Prince", damage: 180, health: 150, cost: 5, rarity: "epic", type: "troop" },
-            { id: "dragon", name: "Dragon", damage: 250, health: 200, cost: 4, rarity: "epic", type: "troop" },
-            { id: "pekkah", name: "P.E.K.K.A", damage: 300, health: 400, cost: 7, rarity: "epic", type: "troop" },
-            { id: "miner", name: "Miner", damage: 100, health: 120, cost: 3, rarity: "legendary", type: "troop" },
-            { id: "lava_hound", name: "Lava Hound", damage: 50, health: 500, cost: 7, rarity: "legendary", type: "troop" }
-        ];
-
-        const enemyDatabase = [
-            {
-                id: "goblin_gang",
-                name: "Goblin Gang",
-                health: 300,
-                damage: 50,
-                cards: [
-                    cardDatabase[0], // Goblin
-                    cardDatabase[1]  // Archer
-                ]
-            },
-            {
-                id: "barbarian_horde",
-                name: "Barbarian Horde",
-                health: 400,
-                damage: 70,
-                cards: [
-                    cardDatabase[2], // Knight
-                    cardDatabase[0]  // Goblin
-                ]
-            },
-            {
-                id: "skeleton_army",
-                name: "Skeleton Army",
-                health: 350,
-                damage: 60,
-                cards: [
-                    cardDatabase[1], // Archer
-                    cardDatabase[2]  // Knight
-                ]
-            },
-            {
-                id: "balloon_squad",
-                name: "Balloon Squad",
-                health: 500,
-                damage: 100,
-                cards: [
-                    cardDatabase[3], // Giant
-                    cardDatabase[4]  // Wizard
-                ]
-            },
-            {
-                id: "royal_giant",
-                name: "Royal Giant",
-                health: 600,
-                damage: 120,
-                cards: [
-                    cardDatabase[3], // Giant
-                    cardDatabase[5]  // Fireball
-                ]
-            }
-        ];
-
-        const bossDatabase = [
-            {
-                id: "giant_goblin",
-                name: "Giant Goblin",
-                health: 1000,
-                damage: 150,
-                cards: [
-                    cardDatabase[3], // Giant
-                    cardDatabase[4], // Wizard
-                    cardDatabase[5]  // Fireball
-                ]
-            },
-            {
-                id: "lava_hound_boss",
-                name: "Lava Hound Boss",
-                health: 1500,
-                damage: 200,
-                cards: [
-                    cardDatabase[9], // P.E.K.K.A
-                    cardDatabase[8], // Dragon
-                    cardDatabase[6], // Lightning
-                    cardDatabase[7]  // Prince
-                ]
-            },
-            {
-                id: "royal_champion",
-                name: "Royal Champion",
-                health: 2000,
-                damage: 250,
-                cards: [
-                    cardDatabase[10], // Miner
-                    cardDatabase[11], // Lava Hound
-                    cardDatabase[9],  // P.E.K.K.A
-                    cardDatabase[8],  // Dragon
-                    cardDatabase[7]   // Prince
-                ]
-            }
+        const cards = [
+            { id: 1, name: "Knight", damage: 50, health: 150, cost: 3, description: "A tough melee fighter" },
+            { id: 2, name: "Archer", damage: 70, health: 100, cost: 3, description: "Ranged damage dealer" },
+            { id: 3, name: "Giant", damage: 80, health: 300, cost: 5, description: "High health tank" },
+            { id: 4, name: "Wizard", damage: 90, health: 120, cost: 5, description: "Area damage spellcaster" },
+            { id: 5, name: "Dragon", damage: 120, health: 200, cost: 4, description: "Flying powerhouse" },
+            { id: 6, name: "Goblin", damage: 40, health: 80, cost: 2, description: "Fast but weak unit" },
+            { id: 7, name: "Healer", damage: 30, health: 100, cost: 4, description: "Support unit that heals allies" },
+            { id: 8, name: "Bomb", damage: 150, health: 50, cost: 3, description: "High damage but fragile" }
         ];
 
         // Game state
-        const gameState = {
-            floor: 1,
-            playerDeck: [],
-            currentEnemy: null,
-            battleLog: ["Welcome to Clash Tower Climb!", "You received a new deck for floor 1!"],
-            gameStatus: "idle", // idle, battle, victory, defeat
-            playerHealth: 1000,
-            enemyHealth: 0,
-            isBossFloor: false
-        };
+        let state = "welcome"; // welcome, deck-building, battle, results
+        let deck = [];
+        let enemyDeck = [];
+        let score = 0;
+        let level = 1;
+        let log = [];
+        let playerHealth = 100;
+        let enemyHealth = 100;
+        let mana = 5;
 
         // DOM Elements
-        const elements = {
-            floorNumber: document.getElementById("floor-number"),
-            floorProgress: document.getElementById("floor-progress"),
-            floorInfo: document.getElementById("floor-info"),
-            playerHealthValue: document.getElementById("player-health-value"),
-            playerHealthBar: document.getElementById("player-health-bar"),
-            battleBtn: document.getElementById("battle-btn"),
-            resetBtn: document.getElementById("reset-btn"),
-            battleTitle: document.getElementById("battle-title"),
-            floorDisplay: document.getElementById("floor-display"),
-            enemyName: document.getElementById("enemy-name"),
-            battleInfo: document.getElementById("battle-info"),
-            startBattleBtn: document.getElementById("start-battle-btn"),
-            idleScreen: document.getElementById("idle-screen"),
-            battleScreen: document.getElementById("battle-screen"),
-            playerBattleHealth: document.getElementById("player-battle-health"),
-            playerBattleBar: document.getElementById("player-battle-bar"),
-            battleEnemyName: document.getElementById("battle-enemy-name"),
-            enemyBattleHealth: document.getElementById("enemy-battle-health"),
-            enemyBattleBar: document.getElementById("enemy-battle-bar"),
-            playerDeck: document.getElementById("player-deck"),
-            victoryScreen: document.getElementById("victory-screen"),
-            victoryMessage: document.getElementById("victory-message"),
-            rewardCards: document.getElementById("reward-cards"),
-            collectBtn: document.getElementById("collect-btn"),
-            defeatScreen: document.getElementById("defeat-screen"),
-            defeatMessage: document.getElementById("defeat-message"),
-            tryAgainBtn: document.getElementById("try-again-btn"),
-            battleLog: document.getElementById("battle-log")
-        };
+        const deckTitle = document.getElementById('deck-title');
+        const deckBuilding = document.getElementById('deck-building');
+        const battleDeck = document.getElementById('battle-deck');
+        const battleScreen = document.getElementById('battle-screen');
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const resultsScreen = document.getElementById('results-screen');
+        const availableCardsContainer = document.getElementById('available-cards');
+        const playerCardsContainer = document.getElementById('player-cards');
+        const enemyCardsContainer = document.getElementById('enemy-cards');
+        const battleLogContainer = document.getElementById('battle-log');
+        const playerHealthValue = document.getElementById('player-health-value');
+        const playerHealthBar = document.getElementById('player-health-bar');
+        const playerBattleHealth = document.getElementById('player-battle-health');
+        const playerBattleHealthBar = document.getElementById('player-battle-health-bar');
+        const enemyHealthValue = document.getElementById('enemy-health');
+        const enemyHealthBar = document.getElementById('enemy-health-bar');
+        const scoreValue = document.getElementById('score-value');
+        const levelValue = document.getElementById('level-value');
+        const manaContainer = document.getElementById('mana-container');
+        const manaValue = document.getElementById('mana-value');
+        const startBattleBtn = document.getElementById('start-battle-btn');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const nextLevelBtn = document.getElementById('next-level-btn');
+        const newGameBtn = document.getElementById('new-game-btn');
+        const resultsIcon = document.getElementById('results-icon');
+        const resultsTitle = document.getElementById('results-title');
+        const resultsText = document.getElementById('results-text');
+        const deckPreview = document.getElementById('deck-preview');
+        const previewCardsContainer = document.getElementById('preview-cards');
 
         // Initialize game
-        function initGame() {
-            generateRandomDeck();
+        function init() {
+            renderCards();
             updateUI();
-            renderBattleLog();
-            
-            // Event listeners
-            elements.battleBtn.addEventListener("click", startBattle);
-            elements.resetBtn.addEventListener("click", resetGame);
-            elements.startBattleBtn.addEventListener("click", startBattle);
-            elements.collectBtn.addEventListener("click", collectCards);
-            elements.tryAgainBtn.addEventListener("click", resetGame);
         }
 
-        // Generate a random deck for the player
-        function generateRandomDeck() {
-            const deck = [];
-            const commonCards = cardDatabase.filter(card => card.rarity === "common");
-            const rareCards = cardDatabase.filter(card => card.rarity === "rare");
-            const epicCards = cardDatabase.filter(card => card.rarity === "epic");
-            const legendaryCards = cardDatabase.filter(card => card.rarity === "legendary");
+        // Update UI based on game state
+        function updateUI() {
+            // Hide all screens
+            welcomeScreen.classList.add('hidden');
+            deckBuilding.classList.add('hidden');
+            battleDeck.classList.add('hidden');
+            battleScreen.classList.add('hidden');
+            resultsScreen.classList.add('hidden');
+            deckPreview.classList.add('hidden');
+            manaContainer.classList.add('hidden');
             
-            // Add 4 common cards
-            for (let i = 0; i < 4; i++) {
-                const randomIndex = Math.floor(Math.random() * commonCards.length);
-                deck.push({...commonCards[randomIndex]});
+            // Show appropriate screens based on game state
+            switch(state) {
+                case "welcome": welcomeScreen.classList.remove('hidden'); break;
+                case "deck-building": 
+                    deckBuilding.classList.remove('hidden');
+                    deckPreview.classList.remove('hidden');
+                    break;
+                case "battle":
+                    battleDeck.classList.remove('hidden');
+                    battleScreen.classList.remove('hidden');
+                    deckPreview.classList.remove('hidden');
+                    manaContainer.classList.remove('hidden');
+                    break;
+                case "results": resultsScreen.classList.remove('hidden'); break;
             }
-            
-            // Add 2 rare cards
-            for (let i = 0; i < 2; i++) {
-                const randomIndex = Math.floor(Math.random() * rareCards.length);
-                deck.push({...rareCards[randomIndex]});
-            }
-            
-            // Add 1 epic card
-            const randomEpicIndex = Math.floor(Math.random() * epicCards.length);
-            deck.push({...epicCards[randomEpicIndex]});
-            
-            // Add 1 legendary card (10% chance)
-            if (Math.random() < 0.1) {
-                const randomLegendaryIndex = Math.floor(Math.random() * legendaryCards.length);
-                deck.push({...legendaryCards[randomEpicIndex]});
-            }
-            
-            gameState.playerDeck = deck;
-            addToBattleLog(`You received a new deck for floor ${gameState.floor}!`);
         }
 
-        // Start a battle with a random enemy
+        // Render available cards for selection
+        function renderCards() {
+            availableCardsContainer.innerHTML = '';
+            cards.forEach(card => {
+                const isSelected = deck.some(c => c.id === card.id);
+                const cardEl = document.createElement('div');
+                cardEl.className = `card-item ${isSelected ? 'selected' : ''}`;
+                cardEl.innerHTML = `
+                    <div class="card-header-row">
+                        <div class="card-name">${card.name}</div>
+                        <div class="card-cost">${card.cost}</div>
+                    </div>
+                    <div class="card-stats">
+                        <div class="stat">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+                            ${card.damage}
+                        </div>
+                        <div class="stat">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                            ${card.health}
+                        </div>
+                    </div>
+                    <div class="card-description">${card.description}</div>
+                `;
+                cardEl.addEventListener('click', () => toggleCard(card));
+                availableCardsContainer.appendChild(cardEl);
+            });
+        }
+
+        // Toggle card selection
+        function toggleCard(card) {
+            if (state !== "deck-building") return;
+            
+            const index = deck.findIndex(c => c.id === card.id);
+            if (index === -1) {
+                if (deck.length < 8) deck.push(card);
+            } else {
+                deck.splice(index, 1);
+            }
+            
+            renderCards();
+            startBattleBtn.disabled = deck.length === 0;
+            renderPreview();
+        }
+
+        // Start battle
         function startBattle() {
-            const isBossFloor = gameState.floor % 5 === 0;
-            const enemyPool = isBossFloor ? bossDatabase : enemyDatabase;
-            const randomIndex = Math.floor(Math.random() * enemyPool.length);
-            const enemy = {...enemyPool[randomIndex]};
+            if (deck.length === 0) {
+                deck = [...cards].sort(() => 0.5 - Math.random()).slice(0, 4);
+            }
             
-            gameState.currentEnemy = enemy;
-            gameState.gameStatus = "battle";
-            gameState.enemyHealth = enemy.health;
-            gameState.isBossFloor = isBossFloor;
-            
-            addToBattleLog(`Battle started against ${enemy.name}!`);
+            generateEnemyDeck();
+            state = "battle";
+            deckTitle.textContent = "Your Deck";
             updateUI();
-            renderBattleScreen();
+            
+            playerHealth = 100;
+            enemyHealth = 100;
+            mana = 5;
+            log = ["Battle started!"];
+            
+            updatePlayerHealth();
+            updateEnemyHealth();
+            updateMana();
+            renderPlayerCards();
+            renderEnemyCards();
+            renderBattleLog();
+            renderPreview();
         }
 
-        // Player uses a card in battle
-        function useCard(card) {
-            if (gameState.gameStatus !== "battle" || !gameState.currentEnemy) return;
+        // Generate enemy deck
+        function generateEnemyDeck() {
+            enemyDeck = [];
+            const shuffled = [...cards].sort(() => 0.5 - Math.random());
+            for (let i = 0; i < 4; i++) {
+                enemyDeck.push(shuffled[i]);
+            }
+        }
+
+        // Render player cards during battle
+        function renderPlayerCards() {
+            playerCardsContainer.innerHTML = '';
+            deck.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card-item';
+                cardEl.innerHTML = `
+                    <div class="card-header-row">
+                        <div class="card-name">${card.name}</div>
+                        <div class="card-cost">${card.cost}</div>
+                    </div>
+                    <div class="card-stats">
+                        <div class="stat">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+                            ${card.damage}
+                        </div>
+                        <div class="stat">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                            ${card.health}
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" style="margin-top: 0.3rem; padding: 0.2rem; font-size: 0.75rem;" 
+                        ${mana < card.cost ? 'disabled' : ''} 
+                        data-id="${card.id}">
+                        Play (${card.cost} mana)
+                    </button>
+                `;
+                playerCardsContainer.appendChild(cardEl);
+            });
             
-            const damage = card.damage;
-            const newEnemyHealth = Math.max(0, gameState.enemyHealth - damage);
+            // Add event listeners to play buttons
+            document.querySelectorAll('[data-id]').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const id = parseInt(e.target.getAttribute('data-id'));
+                    const card = deck.find(c => c.id === id);
+                    if (card) playCard(card);
+                });
+            });
+        }
+
+        // Render enemy cards
+        function renderEnemyCards() {
+            enemyCardsContainer.innerHTML = '';
+            enemyDeck.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card-item';
+                cardEl.innerHTML = `
+                    <div class="card-header-row">
+                        <div class="card-name">${card.name}</div>
+                        <div class="card-cost">${card.cost}</div>
+                    </div>
+                    <div class="card-stats">
+                        <div class="stat">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+                            ${card.damage}
+                        </div>
+                        <div class="stat">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                            ${card.health}
+                        </div>
+                    </div>
+                `;
+                enemyCardsContainer.appendChild(cardEl);
+            });
+        }
+
+        // Render preview cards
+        function renderPreview() {
+            previewCardsContainer.innerHTML = '';
+            deck.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'preview-card';
+                cardEl.innerHTML = `
+                    <div class="card-name" style="font-weight: bold; margin-bottom: 0.1rem;">${card.name}</div>
+                    <div class="card-stats">
+                        <div class="stat">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+                            ${card.damage}
+                        </div>
+                        <div class="stat">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                            ${card.health}
+                        </div>
+                    </div>
+                    <div style="font-size: 0.65rem; margin-top: 0.1rem;">Cost: ${card.cost}</div>
+                `;
+                previewCardsContainer.appendChild(cardEl);
+            });
+        }
+
+        // Play a card during battle
+        function playCard(card) {
+            if (mana < card.cost) return;
             
-            addToBattleLog(`You used ${card.name} dealing ${damage} damage!`);
-            gameState.enemyHealth = newEnemyHealth;
+            mana -= card.cost;
+            updateMana();
             
-            // Update UI immediately
-            elements.enemyBattleHealth.textContent = `${newEnemyHealth}/${gameState.currentEnemy.health}`;
-            elements.enemyBattleBar.style.width = `${(newEnemyHealth / gameState.currentEnemy.health) * 100}%`;
+            // Player attacks
+            enemyHealth -= card.damage;
+            if (enemyHealth < 0) enemyHealth = 0;
+            
+            addToLog(`Player played ${card.name} for ${card.damage} damage!`);
+            updateEnemyHealth();
             
             // Check if enemy is defeated
-            if (newEnemyHealth <= 0) {
-                addToBattleLog(`You defeated ${gameState.currentEnemy.name}!`);
-                gameState.gameStatus = "victory";
-                updateUI();
-                renderVictoryScreen();
+            if (enemyHealth <= 0) {
+                addToLog("Enemy defeated!");
+                score += 100 * level;
+                level++;
+                updateScore();
+                updateLevel();
+                setTimeout(showResults, 1000);
                 return;
             }
             
-            // Enemy counterattack after a delay
-            setTimeout(() => {
-                const enemyDamage = gameState.currentEnemy.damage;
-                const newPlayerHealth = Math.max(0, gameState.playerHealth - enemyDamage);
-                
-                addToBattleLog(`${gameState.currentEnemy.name} attacked for ${enemyDamage} damage!`);
-                gameState.playerHealth = newPlayerHealth;
-                
-                // Update UI
-                elements.playerBattleHealth.textContent = `${newPlayerHealth}/1000`;
-                elements.playerBattleBar.style.width = `${(newPlayerHealth / 1000) * 100}%`;
-                elements.playerHealthValue.textContent = `${newPlayerHealth}/1000`;
-                elements.playerHealthBar.style.width = `${(newPlayerHealth / 1000) * 100}%`;
-                
-                // Check if player is defeated
-                if (newPlayerHealth <= 0) {
-                    addToBattleLog(`You were defeated by ${gameState.currentEnemy.name}!`);
-                    gameState.gameStatus = "defeat";
-                    updateUI();
-                    renderDefeatScreen();
-                }
-            }, 800);
+            // Enemy attacks back
+            const enemyCard = enemyDeck[Math.floor(Math.random() * enemyDeck.length)];
+            playerHealth -= enemyCard.damage;
+            if (playerHealth < 0) playerHealth = 0;
+            
+            addToLog(`Enemy played ${enemyCard.name} for ${enemyCard.damage} damage!`);
+            updatePlayerHealth();
+            
+            // Check if player is defeated
+            if (playerHealth <= 0) {
+                addToLog("Player defeated!");
+                setTimeout(showResults, 1000);
+                return;
+            }
+            
+            // Re-render player cards to update mana costs
+            renderPlayerCards();
         }
 
-        // Advance to next floor
-        function advanceFloor() {
-            if (gameState.gameStatus === "defeat") return;
-            
-            gameState.floor++;
-            const isBossFloor = gameState.floor % 5 === 0;
-            
-            gameState.gameStatus = "idle";
-            gameState.playerHealth = 1000;
-            gameState.isBossFloor = isBossFloor;
-            
-            addToBattleLog(`You advanced to floor ${gameState.floor}! ${isBossFloor ? "Boss floor!" : ""}`);
-            
-            generateRandomDeck();
-            updateUI();
-        }
-
-        // Collect cards after victory
-        function collectCards() {
-            if (!gameState.currentEnemy) return;
-            
-            const cardsToCollect = [...gameState.currentEnemy.cards];
-            
-            // Add collected cards to player deck
-            cardsToCollect.forEach(card => {
-                // Only add if not already in deck (simplified)
-                if (!gameState.playerDeck.some(c => c.id === card.id)) {
-                    gameState.playerDeck.push({...card});
-                }
-            });
-            
-            addToBattleLog(`You collected cards from ${gameState.currentEnemy.name}!`);
-            advanceFloor();
-        }
-
-        // Reset game
-        function resetGame() {
-            gameState.floor = 1;
-            gameState.playerDeck = [];
-            gameState.currentEnemy = null;
-            gameState.battleLog = ["Game reset! Starting new climb...", "You received a new deck for floor 1!"];
-            gameState.gameStatus = "idle";
-            gameState.playerHealth = 1000;
-            gameState.enemyHealth = 0;
-            gameState.isBossFloor = false;
-            
-            generateRandomDeck();
-            updateUI();
-            renderBattleLog();
-        }
-
-        // Add entry to battle log
-        function addToBattleLog(message) {
-            gameState.battleLog.push(message);
+        // Add message to battle log
+        function addToLog(message) {
+            log.push(message);
             renderBattleLog();
         }
 
         // Render battle log
         function renderBattleLog() {
-            elements.battleLog.innerHTML = "";
-            gameState.battleLog.forEach(entry => {
-                const logEntry = document.createElement("div");
-                logEntry.className = "log-entry";
+            battleLogContainer.innerHTML = '';
+            log.forEach(entry => {
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry';
                 logEntry.textContent = entry;
-                elements.battleLog.appendChild(logEntry);
+                battleLogContainer.appendChild(logEntry);
             });
-            elements.battleLog.scrollTop = elements.battleLog.scrollHeight;
+            battleLogContainer.scrollTop = battleLogContainer.scrollHeight;
         }
 
-        // Render battle screen
-        function renderBattleScreen() {
-            if (!gameState.currentEnemy) return;
-            
-            elements.idleScreen.style.display = "none";
-            elements.battleScreen.style.display = "block";
-            elements.victoryScreen.style.display = "none";
-            elements.defeatScreen.style.display = "none";
-            
-            elements.battleEnemyName.textContent = gameState.currentEnemy.name;
-            elements.enemyBattleHealth.textContent = `${gameState.enemyHealth}/${gameState.currentEnemy.health}`;
-            elements.enemyBattleBar.style.width = `${(gameState.enemyHealth / gameState.currentEnemy.health) * 100}%`;
-            
-            elements.playerBattleHealth.textContent = `${gameState.playerHealth}/1000`;
-            elements.playerBattleBar.style.width = `${(gameState.playerHealth / 1000) * 100}%`;
-            
-            // Render player deck
-            elements.playerDeck.innerHTML = "";
-            gameState.playerDeck.forEach(card => {
-                const cardElement = document.createElement("div");
-                cardElement.className = `card-item ${card.rarity}`;
-                cardElement.innerHTML = `
-                    <div class="card-header-row">
-                        <div class="card-name">${card.name}</div>
-                        <div class="card-type">${card.type.charAt(0).toUpperCase()}</div>
-                    </div>
-                    <div class="card-stats">
-                        <span>D: ${card.damage}</span>
-                        <span>H: ${card.health}</span>
-                    </div>
-                    <div class="card-stats">
-                        <span>Cost: ${card.cost}</span>
-                        <span>${card.rarity}</span>
-                    </div>
-                `;
-                cardElement.addEventListener("click", () => useCard(card));
-                elements.playerDeck.appendChild(cardElement);
-            });
+        // Update player health display
+        function updatePlayerHealth() {
+            playerHealthValue.textContent = playerHealth;
+            playerBattleHealth.textContent = playerHealth;
+            playerHealthBar.style.width = `${playerHealth}%`;
+            playerBattleHealthBar.style.width = `${playerHealth}%`;
         }
 
-        // Render victory screen
-        function renderVictoryScreen() {
-            elements.idleScreen.style.display = "none";
-            elements.battleScreen.style.display = "none";
-            elements.victoryScreen.style.display = "block";
-            elements.defeatScreen.style.display = "none";
-            
-            elements.victoryMessage.textContent = `You defeated ${gameState.currentEnemy.name}!`;
-            
-            // Render reward cards
-            elements.rewardCards.innerHTML = "";
-            if (gameState.currentEnemy) {
-                gameState.currentEnemy.cards.forEach(card => {
-                    const cardElement = document.createElement("div");
-                    cardElement.className = `reward-card ${card.rarity}-bg`;
-                    cardElement.innerHTML = `
-                        <div>${card.name.charAt(0)}</div>
-                        <div class="reward-card-name">${card.name}</div>
-                        <div class="reward-card-rarity">${card.rarity}</div>
-                    `;
-                    elements.rewardCards.appendChild(cardElement);
-                });
-            }
+        // Update enemy health display
+        function updateEnemyHealth() {
+            enemyHealthValue.textContent = enemyHealth;
+            enemyHealthBar.style.width = `${enemyHealth}%`;
         }
 
-        // Render defeat screen
-        function renderDefeatScreen() {
-            elements.idleScreen.style.display = "none";
-            elements.battleScreen.style.display = "none";
-            elements.victoryScreen.style.display = "none";
-            elements.defeatScreen.style.display = "block";
-            
-            elements.defeatMessage.textContent = `You were defeated by ${gameState.currentEnemy.name}!`;
+        // Update mana display
+        function updateMana() {
+            manaValue.textContent = mana;
         }
 
-        // Update UI elements
-        function updateUI() {
-            elements.floorNumber.textContent = gameState.floor;
-            elements.floorDisplay.textContent = `Floor ${gameState.floor}`;
+        // Update score display
+        function updateScore() {
+            scoreValue.textContent = score;
+        }
+
+        // Update level display
+        function updateLevel() {
+            levelValue.textContent = level;
+        }
+
+        // Show results screen
+        function showResults() {
+            state = "results";
+            updateUI();
             
-            // Update floor progress
-            const floorsUntilBoss = 5 - (gameState.floor % 5);
-            const progressPercent = ((5 - floorsUntilBoss) / 5) * 100;
-            elements.floorProgress.style.width = `${progressPercent}%`;
-            elements.floorInfo.textContent = `${floorsUntilBoss} floors until next boss`;
-            
-            // Update player health
-            elements.playerHealthValue.textContent = `${gameState.playerHealth}/1000`;
-            elements.playerHealthBar.style.width = `${(gameState.playerHealth / 1000) * 100}%`;
-            
-            // Update battle title
-            if (gameState.isBossFloor) {
-                elements.battleTitle.innerHTML = "⚔️ <span class='boss-indicator'>Boss Battle</span>";
+            if (enemyHealth <= 0) {
+                resultsIcon.textContent = "🏆";
+                resultsTitle.textContent = "Victory!";
+                resultsText.textContent = `You defeated the enemy! +${100 * (level-1)} points!`;
             } else {
-                elements.battleTitle.textContent = "⚔️ Battle Arena";
+                resultsIcon.textContent = "💀";
+                resultsTitle.textContent = "Defeat!";
+                resultsText.textContent = "The enemy was too strong! Try again!";
             }
-            
-            // Update idle screen
-            if (gameState.gameStatus === "idle") {
-                elements.idleScreen.style.display = "block";
-                elements.battleScreen.style.display = "none";
-                elements.victoryScreen.style.display = "none";
-                elements.defeatScreen.style.display = "none";
-                
-                if (gameState.isBossFloor) {
-                    elements.battleInfo.textContent = "A powerful boss awaits you!";
-                    elements.enemyName.textContent = "Boss";
-                } else {
-                    elements.battleInfo.textContent = "A challenger approaches!";
-                    elements.enemyName.textContent = "Enemy";
-                }
-            }
-            
-            // Update battle button
-            elements.battleBtn.disabled = gameState.gameStatus !== "idle";
         }
 
-        // Initialize the game when the page loads
-        window.addEventListener("DOMContentLoaded", initGame);
+        // Continue to next level or try again
+        function continueGame() {
+            deck = [];
+            state = "deck-building";
+            updateUI();
+            deckTitle.textContent = "Build Your Deck";
+            renderCards();
+        }
+
+        // Event listeners
+        startGameBtn.addEventListener('click', () => {
+            state = "deck-building";
+            updateUI();
+        });
+        
+        startBattleBtn.addEventListener('click', startBattle);
+        
+        nextLevelBtn.addEventListener('click', continueGame);
+        
+        newGameBtn.addEventListener('click', () => {
+            deck = [];
+            score = 0;
+            level = 1;
+            state = "welcome";
+            updateScore();
+            updateLevel();
+            updateUI();
+        });
+
+        // Initialize the game
+        init();
     </script>
 </body>
 </html>
