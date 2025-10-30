@@ -1,808 +1,580 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roguelike Tower</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+"use client";
 
-        body {
-            background: linear-gradient(135deg, #1a2a6c, #2c3e50);
-            color: #ecf0f1;
-            min-height: 100vh;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Shield, Heart, Users, Star, Play, ArrowRight } from "lucide-react";
 
-        .game-container {
-            width: 100%;
-            max-width: 900px;
-            background: rgba(30, 30, 46, 0.85);
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
-            border: 1px solid #4a5568;
-        }
+// Card types
+type CardType = {
+  id: string;
+  name: string;
+  damage: number;
+  health: number;
+  cost: number;
+  rarity: "common" | "rare" | "epic" | "legendary";
+  type: "troop" | "spell" | "building";
+};
 
-        header {
-            background: rgba(25, 25, 35, 0.95);
-            padding: 20px;
-            text-align: center;
-            border-bottom: 2px solid #4a5568;
-        }
+// Enemy types
+type EnemyType = {
+  id: string;
+  name: string;
+  health: number;
+  damage: number;
+  cards: CardType[];
+};
 
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            background: linear-gradient(to right, #f6d365, #fda085);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
+// Game state
+type GameState = {
+  floor: number;
+  playerDeck: CardType[];
+  currentEnemy: EnemyType | null;
+  battleLog: string[];
+  gameStatus: "idle" | "battle" | "victory" | "defeat" | "boss";
+  playerHealth: number;
+  enemyHealth: number;
+  isBossFloor: boolean;
+};
 
-        .subtitle {
-            color: #a0aec0;
-            font-size: 1.1rem;
-        }
+// Card database
+const cardDatabase: CardType[] = [
+  { id: "goblin", name: "Goblin", damage: 80, health: 50, cost: 2, rarity: "common", type: "troop" },
+  { id: "archer", name: "Archer", damage: 70, health: 30, cost: 3, rarity: "common", type: "troop" },
+  { id: "knight", name: "Knight", damage: 60, health: 120, cost: 3, rarity: "common", type: "troop" },
+  { id: "giant", name: "Giant", damage: 120, health: 300, cost: 5, rarity: "rare", type: "troop" },
+  { id: "wizard", name: "Wizard", damage: 150, health: 80, cost: 5, rarity: "rare", type: "troop" },
+  { id: "fireball", name: "Fireball", damage: 200, health: 0, cost: 4, rarity: "rare", type: "spell" },
+  { id: "lightning", name: "Lightning", damage: 300, health: 0, cost: 6, rarity: "epic", type: "spell" },
+  { id: "prince", name: "Prince", damage: 180, health: 150, cost: 5, rarity: "epic", type: "troop" },
+  { id: "dragon", name: "Dragon", damage: 250, health: 200, cost: 4, rarity: "epic", type: "troop" },
+  { id: "pekkah", name: "P.E.K.K.A", damage: 300, health: 400, cost: 7, rarity: "epic", type: "troop" },
+  { id: "miner", name: "Miner", damage: 100, health: 120, cost: 3, rarity: "legendary", type: "troop" },
+  { id: "lava_hound", name: "Lava Hound", damage: 50, health: 500, cost: 7, rarity: "legendary", type: "troop" },
+];
 
-        .game-content {
-            padding: 25px;
-        }
+// Enemy database
+const enemyDatabase: EnemyType[] = [
+  {
+    id: "goblin_gang",
+    name: "Goblin Gang",
+    health: 300,
+    damage: 50,
+    cards: [
+      cardDatabase[0], // Goblin
+      cardDatabase[1], // Archer
+    ]
+  },
+  {
+    id: "barbarian_horde",
+    name: "Barbarian Horde",
+    health: 400,
+    damage: 70,
+    cards: [
+      cardDatabase[2], // Knight
+      cardDatabase[0], // Goblin
+    ]
+  },
+  {
+    id: "skeleton_army",
+    name: "Skeleton Army",
+    health: 350,
+    damage: 60,
+    cards: [
+      cardDatabase[1], // Archer
+      cardDatabase[2], // Knight
+    ]
+  },
+  {
+    id: "balloon_squad",
+    name: "Balloon Squad",
+    health: 500,
+    damage: 100,
+    cards: [
+      cardDatabase[3], // Giant
+      cardDatabase[4], // Wizard
+    ]
+  },
+  {
+    id: "royal_giant",
+    name: "Royal Giant",
+    health: 600,
+    damage: 120,
+    cards: [
+      cardDatabase[3], // Giant
+      cardDatabase[5], // Fireball
+    ]
+  },
+];
 
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
-        }
+// Boss database
+const bossDatabase: EnemyType[] = [
+  {
+    id: "giant_goblin",
+    name: "Giant Goblin",
+    health: 1000,
+    damage: 150,
+    cards: [
+      cardDatabase[3], // Giant
+      cardDatabase[4], // Wizard
+      cardDatabase[5], // Fireball
+    ]
+  },
+  {
+    id: "lava_hound_boss",
+    name: "Lava Hound Boss",
+    health: 1500,
+    damage: 200,
+    cards: [
+      cardDatabase[9], // P.E.K.K.A
+      cardDatabase[8], // Dragon
+      cardDatabase[6], // Lightning
+      cardDatabase[7], // Prince
+    ]
+  },
+  {
+    id: "royal_champion",
+    name: "Royal Champion",
+    health: 2000,
+    damage: 250,
+    cards: [
+      cardDatabase[10], // Miner
+      cardDatabase[11], // Lava Hound
+      cardDatabase[9], // P.E.K.K.A
+      cardDatabase[8], // Dragon
+      cardDatabase[7], // Prince
+    ]
+  },
+];
 
-        .card {
-            background: rgba(45, 55, 72, 0.7);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border: 1px solid #4a5568;
-        }
+export default function TowerClimbGame() {
+  const [gameState, setGameState] = useState<GameState>({
+    floor: 1,
+    playerDeck: [],
+    currentEnemy: null,
+    battleLog: [],
+    gameStatus: "idle",
+    playerHealth: 1000,
+    enemyHealth: 0,
+    isBossFloor: false,
+  });
 
-        .card-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-            font-size: 1.3rem;
-            color: #63b3ed;
-        }
+  // Initialize game
+  useEffect(() => {
+    generateRandomDeck();
+  }, []);
 
-        .card-title i {
-            font-size: 1.5rem;
-        }
+  // Generate a random deck for the player
+  const generateRandomDeck = () => {
+    const deck: CardType[] = [];
+    const commonCards = cardDatabase.filter(card => card.rarity === "common");
+    const rareCards = cardDatabase.filter(card => card.rarity === "rare");
+    const epicCards = cardDatabase.filter(card => card.rarity === "epic");
+    const legendaryCards = cardDatabase.filter(card => card.rarity === "legendary");
+    
+    // Add 4 common cards
+    for (let i = 0; i < 4; i++) {
+      const randomIndex = Math.floor(Math.random() * commonCards.length);
+      deck.push(commonCards[randomIndex]);
+    }
+    
+    // Add 2 rare cards
+    for (let i = 0; i < 2; i++) {
+      const randomIndex = Math.floor(Math.random() * rareCards.length);
+      deck.push(rareCards[randomIndex]);
+    }
+    
+    // Add 1 epic card
+    const randomEpicIndex = Math.floor(Math.random() * epicCards.length);
+    deck.push(epicCards[randomEpicIndex]);
+    
+    // Add 1 legendary card (10% chance)
+    if (Math.random() < 0.1) {
+      const randomLegendaryIndex = Math.floor(Math.random() * legendaryCards.length);
+      deck.push(legendaryCards[randomLegendaryIndex]);
+    }
+    
+    setGameState(prev => ({
+      ...prev,
+      playerDeck: deck,
+      battleLog: [`You received a new deck for floor ${prev.floor}!`]
+    }));
+  };
 
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #2d3748;
-        }
+  // Start a battle with a random enemy
+  const startBattle = () => {
+    const isBossFloor = gameState.floor % 5 === 0;
+    const enemyPool = isBossFloor ? bossDatabase : enemyDatabase;
+    const randomIndex = Math.floor(Math.random() * enemyPool.length);
+    const enemy = enemyPool[randomIndex];
+    
+    setGameState(prev => ({
+      ...prev,
+      currentEnemy: enemy,
+      gameStatus: "battle",
+      enemyHealth: enemy.health,
+      isBossFloor,
+      battleLog: [`Battle started against ${enemy.name}!`]
+    }));
+  };
 
-        .stat-row:last-child {
-            border-bottom: none;
+  // Player uses a card in battle
+  const useCard = (card: CardType) => {
+    if (gameState.gameStatus !== "battle" || !gameState.currentEnemy) return;
+    
+    const damage = card.damage;
+    const newEnemyHealth = Math.max(0, gameState.enemyHealth - damage);
+    
+    const logEntry = `You used ${card.name} dealing ${damage} damage!`;
+    
+    setGameState(prev => ({
+      ...prev,
+      enemyHealth: newEnemyHealth,
+      battleLog: [...prev.battleLog, logEntry]
+    }));
+    
+    // Enemy counterattack
+    setTimeout(() => {
+      const enemyDamage = gameState.currentEnemy!.damage;
+      const newPlayerHealth = Math.max(0, prev.playerHealth - enemyDamage);
+      
+      setGameState(prev => {
+        const newLog = [...prev.battleLog, `${prev.currentEnemy!.name} attacked for ${enemyDamage} damage!`];
+        
+        // Check battle outcome
+        if (newEnemyHealth <= 0) {
+          newLog.push(`You defeated ${prev.currentEnemy!.name}!`);
+          return {
+            ...prev,
+            gameStatus: "victory",
+            playerHealth: newPlayerHealth,
+            battleLog: newLog
+          };
         }
+        
+        if (newPlayerHealth <= 0) {
+          newLog.push(`You were defeated by ${prev.currentEnemy!.name}!`);
+          return {
+            ...prev,
+            gameStatus: "defeat",
+            playerHealth: newPlayerHealth,
+            battleLog: newLog
+          };
+        }
+        
+        return {
+          ...prev,
+          playerHealth: newPlayerHealth,
+          battleLog: newLog
+        };
+      });
+    }, 500);
+  };
 
-        .stat-label {
-            color: #a0aec0;
-        }
+  // Advance to next floor
+  const advanceFloor = () => {
+    if (gameState.gameStatus === "defeat") return;
+    
+    const newFloor = gameState.floor + 1;
+    const isBossFloor = newFloor % 5 === 0;
+    
+    setGameState(prev => ({
+      ...prev,
+      floor: newFloor,
+      gameStatus: "idle",
+      playerHealth: 1000,
+      isBossFloor,
+      battleLog: [`You advanced to floor ${newFloor}! ${isBossFloor ? "Boss floor!" : ""}`]
+    }));
+    
+    generateRandomDeck();
+  };
 
-        .stat-value {
-            font-weight: bold;
-            color: #f7fafc;
-        }
+  // Collect cards after victory
+  const collectCards = () => {
+    if (!gameState.currentEnemy) return;
+    
+    const newCards = [...gameState.playerDeck];
+    const cardsToCollect = [...gameState.currentEnemy.cards];
+    
+    // Add collected cards to player deck
+    cardsToCollect.forEach(card => {
+      // Only add if not already in deck (simplified)
+      if (!newCards.some(c => c.id === card.id)) {
+        newCards.push(card);
+      }
+    });
+    
+    setGameState(prev => ({
+      ...prev,
+      playerDeck: newCards,
+      gameStatus: "idle",
+      battleLog: [...prev.battleLog, `You collected cards from ${prev.currentEnemy!.name}!`]
+    }));
+  };
 
-        .health-bar-container {
-            height: 20px;
-            background: #2d3748;
-            border-radius: 10px;
-            margin-top: 8px;
-            overflow: hidden;
-        }
+  // Reset game
+  const resetGame = () => {
+    setGameState({
+      floor: 1,
+      playerDeck: [],
+      currentEnemy: null,
+      battleLog: ["Game reset! Starting new climb..."],
+      gameStatus: "idle",
+      playerHealth: 1000,
+      enemyHealth: 0,
+      isBossFloor: false,
+    });
+    generateRandomDeck();
+  };
 
-        .health-bar {
-            height: 100%;
-            border-radius: 10px;
-            transition: width 0.5s ease;
-        }
+  // Get card color based on rarity
+  const getCardColor = (rarity: string) => {
+    switch (rarity) {
+      case "common": return "bg-gray-200 border-gray-300";
+      case "rare": return "bg-blue-200 border-blue-300";
+      case "epic": return "bg-purple-200 border-purple-300";
+      case "legendary": return "bg-yellow-200 border-yellow-300";
+      default: return "bg-gray-200 border-gray-300";
+    }
+  };
 
-        .player-health {
-            background: linear-gradient(to right, #48bb78, #38a169);
-        }
-
-        .enemy-health {
-            background: linear-gradient(to right, #e53e3e, #c53030);
-        }
-
-        .message-box {
-            background: rgba(45, 55, 72, 0.7);
-            border-radius: 12px;
-            padding: 20px;
-            margin: 25px 0;
-            text-align: center;
-            font-size: 1.2rem;
-            min-height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #4a5568;
-        }
-
-        .action-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin: 30px 0;
-        }
-
-        .btn {
-            padding: 15px 30px;
-            font-size: 1.1rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-primary {
-            background: linear-gradient(to right, #3498db, #2980b9);
-            color: white;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            background: linear-gradient(to right, #2980b9, #2573a7);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        .btn-secondary {
-            background: linear-gradient(to right, #95a5a6, #7f8c8d);
-            color: white;
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-            background: linear-gradient(to right, #7f8c8d, #6c7a7c);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        .inventory-container {
-            margin-top: 25px;
-        }
-
-        .inventory-title {
-            font-size: 1.4rem;
-            margin-bottom: 15px;
-            color: #63b3ed;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .inventory-items {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .item {
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        .common {
-            background: linear-gradient(to right, #718096, #4a5568);
-            color: #edf2f7;
-        }
-
-        .rare {
-            background: linear-gradient(to right, #3498db, #2980b9);
-            color: #ebf8ff;
-        }
-
-        .legendary {
-            background: linear-gradient(to right, #f6e05e, #f6ad55);
-            color: #2d3748;
-        }
-
-        .shop-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .shop-item {
-            background: rgba(45, 55, 72, 0.7);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid #4a5568;
-            transition: transform 0.3s ease;
-        }
-
-        .shop-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .item-name {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-            display: inline-block;
-            padding: 5px 15px;
-            border-radius: 20px;
-        }
-
-        .item-stats {
-            margin: 15px 0;
-        }
-
-        .stat {
-            display: flex;
-            align-items: center;
-            margin: 8px 0;
-            font-size: 0.95rem;
-        }
-
-        .stat i {
-            margin-right: 8px;
-            width: 20px;
-            text-align: center;
-        }
-
-        .price {
-            display: block;
-            text-align: center;
-            font-weight: bold;
-            margin: 15px 0;
-            font-size: 1.1rem;
-            color: #f6e05e;
-        }
-
-        .game-over {
-            text-align: center;
-            padding: 40px 20px;
-        }
-
-        .game-over h2 {
-            font-size: 2.5rem;
-            color: #e53e3e;
-            margin-bottom: 20px;
-        }
-
-        .game-over p {
-            font-size: 1.3rem;
-            margin: 15px 0;
-        }
-
-        .persistent-items {
-            margin: 25px 0;
-        }
-
-        .persistent-title {
-            font-size: 1.4rem;
-            margin-bottom: 15px;
-            color: #63b3ed;
-        }
-
-        footer {
-            text-align: center;
-            padding: 20px;
-            color: #a0aec0;
-            font-size: 0.9rem;
-            border-top: 1px solid #4a5568;
-            background: rgba(25, 25, 35, 0.95);
-        }
-
-        @media (max-width: 768px) {
-            .stats-container {
-                grid-template-columns: 1fr;
-            }
-            
-            .action-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .btn {
-                width: 100%;
-                max-width: 300px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="game-container">
-        <header>
-            <h1>Roguelike Tower</h1>
-            <p class="subtitle">Climb the endless tower, defeat enemies, and become legendary!</p>
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-blue-900 to-purple-900 text-white p-4">
+      <div className="max-w-4xl mx-auto">
+        <header className="text-center py-6">
+          <h1 className="text-4xl font-bold mb-2 flex items-center justify-center">
+            <Shield className="mr-2" /> Clash Tower Climb
+          </h1>
+          <p className="text-lg text-blue-200">Climb the tower, collect cards, and defeat bosses!</p>
         </header>
-        
-        <div class="game-content">
-            <div class="stats-container">
-                <div class="card">
-                    <div class="card-title">
-                        <span>❤</span>
-                        <h2>Player Stats</h2>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Health:</span>
-                        <span class="stat-value" id="player-health">100/100</span>
-                    </div>
-                    <div class="health-bar-container">
-                        <div class="health-bar player-health" id="player-health-bar" style="width: 100%"></div>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Attack:</span>
-                        <span class="stat-value" id="player-attack">10</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Defense:</span>
-                        <span class="stat-value" id="player-defense">5</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Gold:</span>
-                        <span class="stat-value" id="player-gold">100</span>
-                    </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Player Info */}
+          <Card className="bg-blue-800/50 border-blue-700">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="mr-2" /> Player Info
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span>Floor</span>
+                    <span className="font-bold">{gameState.floor}</span>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-2.5">
+                    <div 
+                      className="bg-green-500 h-2.5 rounded-full" 
+                      style={{ width: `${(gameState.floor % 5) * 20}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-sm text-gray-300 mt-1">
+                    {5 - (gameState.floor % 5)} floors until next boss
+                  </p>
                 </div>
                 
-                <div class="card">
-                    <div class="card-title">
-                        <span>🏆</span>
-                        <h2>Tower Progress</h2>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Floor:</span>
-                        <span class="stat-value" id="current-floor">1</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Wave:</span>
-                        <span class="stat-value" id="current-wave">1/3</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Progress:</span>
-                        <span class="stat-value" id="wave-progress">33%</span>
-                    </div>
-                    <div class="health-bar-container">
-                        <div class="health-bar" style="background: linear-gradient(to right, #3498db, #2980b9);" id="wave-progress-bar" style="width: 33%"></div>
-                    </div>
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span>Health</span>
+                    <span className="font-bold">{gameState.playerHealth}/1000</span>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-2.5">
+                    <div 
+                      className="bg-red-500 h-2.5 rounded-full" 
+                      style={{ width: `${(gameState.playerHealth / 1000) * 100}%` }}
+                    ></div>
+                  </div>
                 </div>
                 
-                <div class="card">
-                    <div class="card-title">
-                        <span>⚔</span>
-                        <h2>Enemy</h2>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Name:</span>
-                        <span class="stat-value" id="enemy-name">Goblin Lvl.1</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Health:</span>
-                        <span class="stat-value" id="enemy-health">30/30</span>
-                    </div>
-                    <div class="health-bar-container">
-                        <div class="health-bar enemy-health" id="enemy-health-bar" style="width: 100%"></div>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Attack:</span>
-                        <span class="stat-value" id="enemy-attack">5</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Defense:</span>
-                        <span class="stat-value" id="enemy-defense">2</span>
-                    </div>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={startBattle} 
+                    disabled={gameState.gameStatus !== "idle"}
+                    className="flex-1"
+                  >
+                    <Play className="mr-2 h-4 w-4" /> Battle
+                  </Button>
+                  <Button 
+                    onClick={resetGame}
+                    variant="outline"
+                    className="border-blue-500 text-blue-300 hover:bg-blue-700"
+                  >
+                    Reset
+                  </Button>
                 </div>
-            </div>
-            
-            <div class="message-box" id="message">
-                Welcome to the Tower! Defeat enemies to climb higher.
-            </div>
-            
-            <div class="action-buttons">
-                <button class="btn btn-primary" id="attack-btn">Attack Enemy</button>
-                <button class="btn btn-secondary" id="shop-btn" style="display: none;">Visit Shop</button>
-            </div>
-            
-            <div class="inventory-container">
-                <div class="inventory-title">
-                    <span>📦</span>
-                    <h2>Inventory (<span id="inventory-count">0</span>)</h2>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Battle Area */}
+          <Card className="bg-blue-800/50 border-blue-700 lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center">
+                  {gameState.isBossFloor ? (
+                    <>
+                      <Star className="mr-2 text-yellow-400" /> Boss Battle
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="mr-2" /> Battle Arena
+                    </>
+                  )}
+                </span>
+                <span className="text-lg">
+                  Floor {gameState.floor}
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {gameState.gameStatus === "idle" && (
+                <div className="text-center py-12">
+                  <div className="mb-6">
+                    <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold">Ready for Battle!</h3>
+                    <p className="text-gray-300">
+                      {gameState.isBossFloor 
+                        ? "A powerful boss awaits you!" 
+                        : "A challenger approaches!"}
+                    </p>
+                  </div>
+                  <Button onClick={startBattle} className="text-lg px-8 py-6">
+                    <Play className="mr-2 h-5 w-5" /> Start Battle
+                  </Button>
                 </div>
-                <div class="inventory-items" id="inventory">
-                    <div class="item common">No items yet</div>
-                </div>
-            </div>
-            
-            <div class="shop-container" id="shop" style="display: none;">
-                <!-- Shop items will be generated here -->
-            </div>
-            
-            <div class="game-over" id="game-over" style="display: none;">
-                <h2>Game Over</h2>
-                <p>You reached Floor <span id="final-floor">1</span></p>
-                <div class="persistent-items">
-                    <div class="persistent-title">Persistent Items:</div>
-                    <div class="inventory-items" id="persistent-items">
-                        <div class="item common">None</div>
+              )}
+
+              {gameState.gameStatus === "battle" && gameState.currentEnemy && (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <div className="text-center">
+                      <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16 mx-auto mb-2" />
+                      <h3 className="font-bold">You</h3>
+                      <div className="w-32 bg-gray-700 rounded-full h-2.5 mx-auto mt-2">
+                        <div 
+                          className="bg-green-500 h-2.5 rounded-full" 
+                          style={{ width: `${(gameState.playerHealth / 1000) * 100}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-sm mt-1">{gameState.playerHealth}/1000</p>
                     </div>
+                    
+                    <div className="text-3xl font-bold">VS</div>
+                    
+                    <div className="text-center">
+                      <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16 mx-auto mb-2" />
+                      <h3 className="font-bold">{gameState.currentEnemy.name}</h3>
+                      <div className="w-32 bg-gray-700 rounded-full h-2.5 mx-auto mt-2">
+                        <div 
+                          className="bg-red-500 h-2.5 rounded-full" 
+                          style={{ width: `${(gameState.enemyHealth / gameState.currentEnemy.health) * 100}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-sm mt-1">{gameState.enemyHealth}/{gameState.currentEnemy.health}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-bold mb-2">Your Deck</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {gameState.playerDeck.map((card, index) => (
+                        <Card 
+                          key={`${card.id}-${index}`} 
+                          className={`${getCardColor(card.rarity)} border-2 cursor-pointer hover:opacity-90 transition-opacity`}
+                          onClick={() => useCard(card)}
+                        >
+                          <CardContent className="p-3">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h5 className="font-bold text-sm">{card.name}</h5>
+                                <p className="text-xs">Cost: {card.cost}</p>
+                              </div>
+                              <span className="text-xs bg-black/20 px-1 rounded">
+                                {card.type.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="flex justify-between mt-2 text-xs">
+                              <span>D: {card.damage}</span>
+                              <span>H: {card.health}</span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <button class="btn btn-primary" id="restart-btn">Restart Game</button>
-            </div>
+              )}
+
+              {gameState.gameStatus === "victory" && (
+                <div className="text-center py-8">
+                  <div className="text-5xl mb-4">🎉</div>
+                  <h3 className="text-2xl font-bold text-green-400 mb-2">Victory!</h3>
+                  <p className="mb-6">
+                    You defeated {gameState.currentEnemy?.name}!
+                  </p>
+                  <div className="mb-6">
+                    <h4 className="font-bold mb-2">Cards Collected:</h4>
+                    <div className="flex justify-center gap-2">
+                      {gameState.currentEnemy?.cards.map((card, index) => (
+                        <Card 
+                          key={`${card.id}-reward-${index}`} 
+                          className={`${getCardColor(card.rarity)} border-2 w-24`}
+                        >
+                          <CardContent className="p-2 text-center">
+                            <div className="text-xs font-bold truncate">{card.name}</div>
+                            <div className="text-xs mt-1">{card.rarity}</div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                  <Button onClick={collectCards} className="px-8 py-3">
+                    Collect Cards <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+
+              {gameState.gameStatus === "defeat" && (
+                <div className="text-center py-8">
+                  <div className="text-5xl mb-4">💀</div>
+                  <h3 className="text-2xl font-bold text-red-400 mb-2">Defeat!</h3>
+                  <p className="mb-6">
+                    You were defeated by {gameState.currentEnemy?.name}!
+                  </p>
+                  <Button onClick={resetGame} className="px-8 py-3">
+                    Try Again
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Battle Log */}
+          <Card className="bg-blue-800/50 border-blue-700 lg:col-span-3">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Heart className="mr-2" /> Battle Log
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-40 overflow-y-auto bg-black/20 rounded-lg p-3">
+                {gameState.battleLog.map((log, index) => (
+                  <div key={index} className="py-1 border-b border-gray-700 last:border-0">
+                    {log}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        
-        <footer>
-            <p>Defeat enemies to earn gold. Visit the shop every 3 floors to buy powerful items!</p>
-            <p>Rare and legendary items persist after death.</p>
+
+        <footer className="text-center py-6 text-gray-400 text-sm">
+          <p>Clash Tower Climb - A Clash Royale-inspired tower climbing game</p>
+          <p className="mt-1">Climb floors, collect cards, and defeat bosses every 5 floors!</p>
         </footer>
+      </div>
     </div>
-
-    <script>
-        // Game data
-        const ITEMS = [
-            { id: '1', name: 'Iron Sword', type: 'weapon', rarity: 'common', attackBonus: 5, defenseBonus: 0, price: 50 },
-            { id: '2', name: 'Steel Shield', type: 'armor', rarity: 'common', attackBonus: 0, defenseBonus: 5, price: 50 },
-            { id: '3', name: 'Fireball', type: 'spell', rarity: 'common', attackBonus: 8, defenseBonus: 0, price: 75 },
-            { id: '4', name: 'Enchanted Blade', type: 'weapon', rarity: 'rare', attackBonus: 12, defenseBonus: 2, price: 150 },
-            { id: '5', name: 'Dragon Scale Armor', type: 'armor', rarity: 'rare', attackBonus: 3, defenseBonus: 12, price: 150 },
-            { id: '6', name: 'Lightning Strike', type: 'spell', rarity: 'rare', attackBonus: 20, defenseBonus: 0, price: 200 },
-            { id: '7', name: 'Excalibur', type: 'weapon', rarity: 'legendary', attackBonus: 25, defenseBonus: 5, price: 500 },
-            { id: '8', name: 'Aegis Shield', type: 'armor', rarity: 'legendary', attackBonus: 5, defenseBonus: 25, price: 500 },
-            { id: '9', name: 'Meteor Shower', type: 'spell', rarity: 'legendary', attackBonus: 40, defenseBonus: 0, price: 750 },
-        ];
-
-        const ENEMY_NAMES = [
-            'Goblin', 'Orc', 'Skeleton', 'Zombie', 'Wolf', 'Bandit', 
-            'Troll', 'Witch', 'Demon', 'Dragon'
-        ];
-
-        // Game state
-        let gameState = {
-            floor: 1,
-            wave: 1,
-            player: {
-                health: 100,
-                maxHealth: 100,
-                attack: 10,
-                defense: 5,
-                gold: 100,
-                inventory: []
-            },
-            enemy: null,
-            gameStatus: 'playing', // playing, shop, gameOver
-            message: 'Welcome to the Tower! Defeat enemies to climb higher.'
-        };
-
-        // DOM Elements
-        const elements = {
-            playerHealth: document.getElementById('player-health'),
-            playerHealthBar: document.getElementById('player-health-bar'),
-            playerAttack: document.getElementById('player-attack'),
-            playerDefense: document.getElementById('player-defense'),
-            playerGold: document.getElementById('player-gold'),
-            currentFloor: document.getElementById('current-floor'),
-            currentWave: document.getElementById('current-wave'),
-            waveProgress: document.getElementById('wave-progress'),
-            waveProgressBar: document.getElementById('wave-progress-bar'),
-            enemyName: document.getElementById('enemy-name'),
-            enemyHealth: document.getElementById('enemy-health'),
-            enemyHealthBar: document.getElementById('enemy-health-bar'),
-            enemyAttack: document.getElementById('enemy-attack'),
-            enemyDefense: document.getElementById('enemy-defense'),
-            message: document.getElementById('message'),
-            attackBtn: document.getElementById('attack-btn'),
-            shopBtn: document.getElementById('shop-btn'),
-            inventory: document.getElementById('inventory'),
-            inventoryCount: document.getElementById('inventory-count'),
-            shop: document.getElementById('shop'),
-            gameOver: document.getElementById('game-over'),
-            finalFloor: document.getElementById('final-floor'),
-            persistentItems: document.getElementById('persistent-items'),
-            restartBtn: document.getElementById('restart-btn')
-        };
-
-        // Helper functions
-        function generateEnemy(floor, wave) {
-            const baseHealth = 30 + (floor * 5) + (wave * 2);
-            const baseAttack = 5 + Math.floor(floor / 2) + Math.floor(wave / 3);
-            const baseDefense = Math.floor(floor / 3) + Math.floor(wave / 5);
-            
-            const name = ENEMY_NAMES[Math.floor(Math.random() * ENEMY_NAMES.length)];
-            const health = Math.floor(baseHealth * (0.8 + Math.random() * 0.4));
-            
-            return {
-                id: `enemy-${floor}-${wave}`,
-                name: `${name} Lvl.${Math.max(1, Math.floor(floor/3))}`,
-                health,
-                maxHealth: health,
-                attack: Math.floor(baseAttack * (0.8 + Math.random() * 0.4)),
-                defense: Math.floor(baseDefense * (0.8 + Math.random() * 0.4)),
-            };
-        }
-
-        function calculateDamage(attacker, defender) {
-            const baseDamage = attacker.attack;
-            const defenseReduction = Math.min(0.8, defender.defense / (defender.defense + 10));
-            return Math.max(1, Math.floor(baseDamage * (1 - defenseReduction)));
-        }
-
-        function getRarityClass(rarity) {
-            switch(rarity) {
-                case 'common': return 'common';
-                case 'rare': return 'rare';
-                case 'legendary': return 'legendary';
-                default: return 'common';
-            }
-        }
-
-        function updateUI() {
-            // Update player stats
-            elements.playerHealth.textContent = `${gameState.player.health}/${gameState.player.maxHealth}`;
-            elements.playerHealthBar.style.width = `${(gameState.player.health / gameState.player.maxHealth) * 100}%`;
-            elements.playerAttack.textContent = gameState.player.attack;
-            elements.playerDefense.textContent = gameState.player.defense;
-            elements.playerGold.textContent = gameState.player.gold;
-            
-            // Update tower progress
-            elements.currentFloor.textContent = gameState.floor;
-            elements.currentWave.textContent = `${gameState.wave}/3`;
-            const progress = Math.floor((gameState.wave / 3) * 100);
-            elements.waveProgress.textContent = `${progress}%`;
-            elements.waveProgressBar.style.width = `${progress}%`;
-            
-            // Update enemy stats
-            if (gameState.enemy) {
-                elements.enemyName.textContent = gameState.enemy.name;
-                elements.enemyHealth.textContent = `${gameState.enemy.health}/${gameState.enemy.maxHealth}`;
-                elements.enemyHealthBar.style.width = `${(gameState.enemy.health / gameState.enemy.maxHealth) * 100}%`;
-                elements.enemyAttack.textContent = gameState.enemy.attack;
-                elements.enemyDefense.textContent = gameState.enemy.defense;
-            }
-            
-            // Update message
-            elements.message.textContent = gameState.message;
-            
-            // Update inventory
-            elements.inventoryCount.textContent = gameState.player.inventory.length;
-            elements.inventory.innerHTML = '';
-            
-            if (gameState.player.inventory.length === 0) {
-                elements.inventory.innerHTML = '<div class="item common">No items yet</div>';
-            } else {
-                gameState.player.inventory.forEach(item => {
-                    const itemElement = document.createElement('div');
-                    itemElement.className = `item ${getRarityClass(item.rarity)}`;
-                    itemElement.textContent = item.name;
-                    elements.inventory.appendChild(itemElement);
-                });
-            }
-            
-            // Show/hide game sections based on status
-            elements.shop.style.display = gameState.gameStatus === 'shop' ? 'grid' : 'none';
-            elements.gameOver.style.display = gameState.gameStatus === 'gameOver' ? 'block' : 'none';
-            elements.attackBtn.style.display = gameState.gameStatus === 'playing' ? 'block' : 'none';
-            elements.shopBtn.style.display = gameState.gameStatus === 'shop' ? 'block' : 'none';
-            
-            // Disable attack button if no enemy or enemy dead
-            elements.attackBtn.disabled = !gameState.enemy || gameState.enemy.health <= 0;
-        }
-
-        function initializeEnemy() {
-            if (gameState.gameStatus === 'playing') {
-                gameState.enemy = generateEnemy(gameState.floor, gameState.wave);
-                gameState.message = `A wild ${gameState.enemy.name} appears!`;
-                updateUI();
-            }
-        }
-
-        function checkShop() {
-            if (gameState.floor > 1 && gameState.floor % 3 === 1 && gameState.wave === 1) {
-                gameState.gameStatus = 'shop';
-                gameState.message = 'You\'ve reached a shop floor! Purchase items to strengthen yourself.';
-                renderShop();
-                updateUI();
-            }
-        }
-
-        function renderShop() {
-            elements.shop.innerHTML = '';
-            
-            // Filter items based on player's floor
-            const availableItems = ITEMS.filter(item => {
-                if (item.rarity === 'common') return true;
-                if (item.rarity === 'rare') return gameState.floor >= 3;
-                if (item.rarity === 'legendary') return gameState.floor >= 6;
-                return false;
-            });
-            
-            elements.shop.innerHTML = `<h2 style="grid-column: 1/-1; text-align: center; margin-bottom: 20px;">Tower Shop - Floor ${gameState.floor}</h2>
-                                       <p style="grid-column: 1/-1; text-align: center; margin-bottom: 20px;">You have ${gameState.player.gold} gold to spend</p>`;
-            
-            availableItems.forEach(item => {
-                const itemElement = document.createElement('div');
-                itemElement.className = 'shop-item';
-                itemElement.innerHTML = `
-                    <div class="item-name ${getRarityClass(item.rarity)}">${item.name}</div>
-                    <div class="item-type">${item.type}</div>
-                    <div class="item-stats">
-                        ${item.attackBonus > 0 ? `<div class="stat"><span>⚔</span> +${item.attackBonus} Attack</div>` : ''}
-                        ${item.defenseBonus > 0 ? `<div class="stat"><span>🛡</span> +${item.defenseBonus} Defense</div>` : ''}
-                    </div>
-                    <div class="price">${item.price} gold</div>
-                    <button class="btn btn-primary buy-btn" data-id="${item.id}">Purchase</button>
-                `;
-                elements.shop.appendChild(itemElement);
-            });
-            
-            // Add continue button
-            const continueBtn = document.createElement('button');
-            continueBtn.className = 'btn btn-secondary';
-            continueBtn.textContent = 'Continue Climbing';
-            continueBtn.style.gridColumn = '1/-1';
-            continueBtn.style.marginTop = '20px';
-            continueBtn.addEventListener('click', () => {
-                gameState.gameStatus = 'playing';
-                gameState.message = 'Back to climbing the tower!';
-                updateUI();
-            });
-            elements.shop.appendChild(continueBtn);
-            
-            // Add event listeners to buy buttons
-            document.querySelectorAll('.buy-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const itemId = e.target.getAttribute('data-id');
-                    const item = ITEMS.find(i => i.id === itemId);
-                    handleShopPurchase(item);
-                });
-            });
-        }
-
-        function handleAttack() {
-            if (!gameState.enemy || gameState.gameStatus !== 'playing') return;
-
-            // Player attacks enemy
-            const playerDamage = calculateDamage(gameState.player, gameState.enemy);
-            const newEnemyHealth = Math.max(0, gameState.enemy.health - playerDamage);
-
-            // Enemy attacks player if still alive
-            let newPlayerHealth = gameState.player.health;
-            let newMessage = `You deal ${playerDamage} damage to ${gameState.enemy.name}!`;
-
-            if (newEnemyHealth > 0) {
-                const enemyDamage = calculateDamage(gameState.enemy, gameState.player);
-                newPlayerHealth = Math.max(0, gameState.player.health - enemyDamage);
-                newMessage += ` ${gameState.enemy.name} deals ${enemyDamage} damage to you!`;
-            }
-
-            // Update state
-            gameState.player.health = newPlayerHealth;
-            gameState.enemy.health = newEnemyHealth;
-            gameState.message = newMessage;
-
-            // Check win/lose conditions
-            if (newEnemyHealth <= 0) {
-                const goldReward = 20 + Math.floor(gameState.floor / 2);
-                gameState.message = `You defeated ${gameState.enemy.name}! Gained ${goldReward} gold.`;
-                gameState.player.gold += goldReward;
-                
-                // Move to next wave or floor
-                if (gameState.wave < 3) {
-                    gameState.wave += 1;
-                } else {
-                    gameState.floor += 1;
-                    gameState.wave = 1;
-                }
-                
-                // Check if it's time for shop
-                setTimeout(() => {
-                    checkShop();
-                    if (gameState.gameStatus === 'playing') {
-                        initializeEnemy();
-                    }
-                }, 1500);
-            } else if (newPlayerHealth <= 0) {
-                gameState.gameStatus = 'gameOver';
-                gameState.message = 'You have been defeated! Game Over.';
-                elements.finalFloor.textContent = gameState.floor;
-                
-                // Show persistent items
-                const persistentItems = gameState.player.inventory.filter(
-                    item => item.rarity === 'rare' || item.rarity === 'legendary'
-                );
-                
-                elements.persistentItems.innerHTML = '';
-                if (persistentItems.length === 0) {
-                    elements.persistentItems.innerHTML = '<div class="item common">None</div>';
-                } else {
-                    persistentItems.forEach(item => {
-                        const itemElement = document.createElement('div');
-                        itemElement.className = `item ${getRarityClass(item.rarity)}`;
-                        itemElement.textContent = item.name;
-                        elements.persistentItems.appendChild(itemElement);
-                    });
-                }
-            }
-
-            updateUI();
-        }
-
-        function handleShopPurchase(item) {
-            if (gameState.player.gold < item.price) {
-                gameState.message = 'Not enough gold!';
-                updateUI();
-                return;
-            }
-
-            // Add item to inventory
-            gameState.player.inventory.push({...item});
-            gameState.player.gold -= item.price;
-            gameState.player.attack += item.attackBonus;
-            gameState.player.defense += item.defenseBonus;
-            
-            gameState.message = `Purchased ${item.name}!`;
-            updateUI();
-        }
-
-        function handleRestart() {
-            // Keep rare and legendary items
-            const persistentItems = gameState.player.inventory.filter(
-                item => item.rarity === 'rare' || item.rarity === 'legendary'
-            );
-            
-            const attackBonus = persistentItems.reduce((sum, item) => sum + item.attackBonus, 0);
-            const defenseBonus = persistentItems.reduce((sum, item) => sum + item.defenseBonus, 0);
-            
-            // Reset game state
-            gameState = {
-                floor: 1,
-                wave: 1,
-                player: {
-                    health: 100,
-                    maxHealth: 100,
-                    attack: 10 + attackBonus,
-                    defense: 5 + defenseBonus,
-                    gold: 100,
-                    inventory: persistentItems
-                },
-                enemy: null,
-                gameStatus: 'playing',
-                message: 'Welcome back to the Tower! Your persistent items give you an edge.'
-            };
-            
-            initializeEnemy();
-            updateUI();
-        }
-
-        // Event listeners
-        elements.attackBtn.addEventListener('click', handleAttack);
-        elements.restartBtn.addEventListener('click', handleRestart);
-
-        // Initialize game
-        initializeEnemy();
-        updateUI();
-    </script>
-</body>
-</html>
+  );
+}
