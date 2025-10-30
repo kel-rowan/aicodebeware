@@ -1,580 +1,966 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Shield, Heart, Users, Star, Play, ArrowRight } from "lucide-react";
-
-// Card types
-type CardType = {
-  id: string;
-  name: string;
-  damage: number;
-  health: number;
-  cost: number;
-  rarity: "common" | "rare" | "epic" | "legendary";
-  type: "troop" | "spell" | "building";
-};
-
-// Enemy types
-type EnemyType = {
-  id: string;
-  name: string;
-  health: number;
-  damage: number;
-  cards: CardType[];
-};
-
-// Game state
-type GameState = {
-  floor: number;
-  playerDeck: CardType[];
-  currentEnemy: EnemyType | null;
-  battleLog: string[];
-  gameStatus: "idle" | "battle" | "victory" | "defeat" | "boss";
-  playerHealth: number;
-  enemyHealth: number;
-  isBossFloor: boolean;
-};
-
-// Card database
-const cardDatabase: CardType[] = [
-  { id: "goblin", name: "Goblin", damage: 80, health: 50, cost: 2, rarity: "common", type: "troop" },
-  { id: "archer", name: "Archer", damage: 70, health: 30, cost: 3, rarity: "common", type: "troop" },
-  { id: "knight", name: "Knight", damage: 60, health: 120, cost: 3, rarity: "common", type: "troop" },
-  { id: "giant", name: "Giant", damage: 120, health: 300, cost: 5, rarity: "rare", type: "troop" },
-  { id: "wizard", name: "Wizard", damage: 150, health: 80, cost: 5, rarity: "rare", type: "troop" },
-  { id: "fireball", name: "Fireball", damage: 200, health: 0, cost: 4, rarity: "rare", type: "spell" },
-  { id: "lightning", name: "Lightning", damage: 300, health: 0, cost: 6, rarity: "epic", type: "spell" },
-  { id: "prince", name: "Prince", damage: 180, health: 150, cost: 5, rarity: "epic", type: "troop" },
-  { id: "dragon", name: "Dragon", damage: 250, health: 200, cost: 4, rarity: "epic", type: "troop" },
-  { id: "pekkah", name: "P.E.K.K.A", damage: 300, health: 400, cost: 7, rarity: "epic", type: "troop" },
-  { id: "miner", name: "Miner", damage: 100, health: 120, cost: 3, rarity: "legendary", type: "troop" },
-  { id: "lava_hound", name: "Lava Hound", damage: 50, health: 500, cost: 7, rarity: "legendary", type: "troop" },
-];
-
-// Enemy database
-const enemyDatabase: EnemyType[] = [
-  {
-    id: "goblin_gang",
-    name: "Goblin Gang",
-    health: 300,
-    damage: 50,
-    cards: [
-      cardDatabase[0], // Goblin
-      cardDatabase[1], // Archer
-    ]
-  },
-  {
-    id: "barbarian_horde",
-    name: "Barbarian Horde",
-    health: 400,
-    damage: 70,
-    cards: [
-      cardDatabase[2], // Knight
-      cardDatabase[0], // Goblin
-    ]
-  },
-  {
-    id: "skeleton_army",
-    name: "Skeleton Army",
-    health: 350,
-    damage: 60,
-    cards: [
-      cardDatabase[1], // Archer
-      cardDatabase[2], // Knight
-    ]
-  },
-  {
-    id: "balloon_squad",
-    name: "Balloon Squad",
-    health: 500,
-    damage: 100,
-    cards: [
-      cardDatabase[3], // Giant
-      cardDatabase[4], // Wizard
-    ]
-  },
-  {
-    id: "royal_giant",
-    name: "Royal Giant",
-    health: 600,
-    damage: 120,
-    cards: [
-      cardDatabase[3], // Giant
-      cardDatabase[5], // Fireball
-    ]
-  },
-];
-
-// Boss database
-const bossDatabase: EnemyType[] = [
-  {
-    id: "giant_goblin",
-    name: "Giant Goblin",
-    health: 1000,
-    damage: 150,
-    cards: [
-      cardDatabase[3], // Giant
-      cardDatabase[4], // Wizard
-      cardDatabase[5], // Fireball
-    ]
-  },
-  {
-    id: "lava_hound_boss",
-    name: "Lava Hound Boss",
-    health: 1500,
-    damage: 200,
-    cards: [
-      cardDatabase[9], // P.E.K.K.A
-      cardDatabase[8], // Dragon
-      cardDatabase[6], // Lightning
-      cardDatabase[7], // Prince
-    ]
-  },
-  {
-    id: "royal_champion",
-    name: "Royal Champion",
-    health: 2000,
-    damage: 250,
-    cards: [
-      cardDatabase[10], // Miner
-      cardDatabase[11], // Lava Hound
-      cardDatabase[9], // P.E.K.K.A
-      cardDatabase[8], // Dragon
-      cardDatabase[7], // Prince
-    ]
-  },
-];
-
-export default function TowerClimbGame() {
-  const [gameState, setGameState] = useState<GameState>({
-    floor: 1,
-    playerDeck: [],
-    currentEnemy: null,
-    battleLog: [],
-    gameStatus: "idle",
-    playerHealth: 1000,
-    enemyHealth: 0,
-    isBossFloor: false,
-  });
-
-  // Initialize game
-  useEffect(() => {
-    generateRandomDeck();
-  }, []);
-
-  // Generate a random deck for the player
-  const generateRandomDeck = () => {
-    const deck: CardType[] = [];
-    const commonCards = cardDatabase.filter(card => card.rarity === "common");
-    const rareCards = cardDatabase.filter(card => card.rarity === "rare");
-    const epicCards = cardDatabase.filter(card => card.rarity === "epic");
-    const legendaryCards = cardDatabase.filter(card => card.rarity === "legendary");
-    
-    // Add 4 common cards
-    for (let i = 0; i < 4; i++) {
-      const randomIndex = Math.floor(Math.random() * commonCards.length);
-      deck.push(commonCards[randomIndex]);
-    }
-    
-    // Add 2 rare cards
-    for (let i = 0; i < 2; i++) {
-      const randomIndex = Math.floor(Math.random() * rareCards.length);
-      deck.push(rareCards[randomIndex]);
-    }
-    
-    // Add 1 epic card
-    const randomEpicIndex = Math.floor(Math.random() * epicCards.length);
-    deck.push(epicCards[randomEpicIndex]);
-    
-    // Add 1 legendary card (10% chance)
-    if (Math.random() < 0.1) {
-      const randomLegendaryIndex = Math.floor(Math.random() * legendaryCards.length);
-      deck.push(legendaryCards[randomLegendaryIndex]);
-    }
-    
-    setGameState(prev => ({
-      ...prev,
-      playerDeck: deck,
-      battleLog: [`You received a new deck for floor ${prev.floor}!`]
-    }));
-  };
-
-  // Start a battle with a random enemy
-  const startBattle = () => {
-    const isBossFloor = gameState.floor % 5 === 0;
-    const enemyPool = isBossFloor ? bossDatabase : enemyDatabase;
-    const randomIndex = Math.floor(Math.random() * enemyPool.length);
-    const enemy = enemyPool[randomIndex];
-    
-    setGameState(prev => ({
-      ...prev,
-      currentEnemy: enemy,
-      gameStatus: "battle",
-      enemyHealth: enemy.health,
-      isBossFloor,
-      battleLog: [`Battle started against ${enemy.name}!`]
-    }));
-  };
-
-  // Player uses a card in battle
-  const useCard = (card: CardType) => {
-    if (gameState.gameStatus !== "battle" || !gameState.currentEnemy) return;
-    
-    const damage = card.damage;
-    const newEnemyHealth = Math.max(0, gameState.enemyHealth - damage);
-    
-    const logEntry = `You used ${card.name} dealing ${damage} damage!`;
-    
-    setGameState(prev => ({
-      ...prev,
-      enemyHealth: newEnemyHealth,
-      battleLog: [...prev.battleLog, logEntry]
-    }));
-    
-    // Enemy counterattack
-    setTimeout(() => {
-      const enemyDamage = gameState.currentEnemy!.damage;
-      const newPlayerHealth = Math.max(0, prev.playerHealth - enemyDamage);
-      
-      setGameState(prev => {
-        const newLog = [...prev.battleLog, `${prev.currentEnemy!.name} attacked for ${enemyDamage} damage!`];
-        
-        // Check battle outcome
-        if (newEnemyHealth <= 0) {
-          newLog.push(`You defeated ${prev.currentEnemy!.name}!`);
-          return {
-            ...prev,
-            gameStatus: "victory",
-            playerHealth: newPlayerHealth,
-            battleLog: newLog
-          };
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Tower Climb</title>
+    <style>
+        :root {
+            --primary: #1e40af;
+            --secondary: #7e22ce;
+            --accent: #f59e0b;
+            --light: #dbeafe;
+            --dark: #0f172a;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
         }
         
-        if (newPlayerHealth <= 0) {
-          newLog.push(`You were defeated by ${prev.currentEnemy!.name}!`);
-          return {
-            ...prev,
-            gameStatus: "defeat",
-            playerHealth: newPlayerHealth,
-            battleLog: newLog
-          };
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
-        return {
-          ...prev,
-          playerHealth: newPlayerHealth,
-          battleLog: newLog
-        };
-      });
-    }, 500);
-  };
-
-  // Advance to next floor
-  const advanceFloor = () => {
-    if (gameState.gameStatus === "defeat") return;
-    
-    const newFloor = gameState.floor + 1;
-    const isBossFloor = newFloor % 5 === 0;
-    
-    setGameState(prev => ({
-      ...prev,
-      floor: newFloor,
-      gameStatus: "idle",
-      playerHealth: 1000,
-      isBossFloor,
-      battleLog: [`You advanced to floor ${newFloor}! ${isBossFloor ? "Boss floor!" : ""}`]
-    }));
-    
-    generateRandomDeck();
-  };
-
-  // Collect cards after victory
-  const collectCards = () => {
-    if (!gameState.currentEnemy) return;
-    
-    const newCards = [...gameState.playerDeck];
-    const cardsToCollect = [...gameState.currentEnemy.cards];
-    
-    // Add collected cards to player deck
-    cardsToCollect.forEach(card => {
-      // Only add if not already in deck (simplified)
-      if (!newCards.some(c => c.id === card.id)) {
-        newCards.push(card);
-      }
-    });
-    
-    setGameState(prev => ({
-      ...prev,
-      playerDeck: newCards,
-      gameStatus: "idle",
-      battleLog: [...prev.battleLog, `You collected cards from ${prev.currentEnemy!.name}!`]
-    }));
-  };
-
-  // Reset game
-  const resetGame = () => {
-    setGameState({
-      floor: 1,
-      playerDeck: [],
-      currentEnemy: null,
-      battleLog: ["Game reset! Starting new climb..."],
-      gameStatus: "idle",
-      playerHealth: 1000,
-      enemyHealth: 0,
-      isBossFloor: false,
-    });
-    generateRandomDeck();
-  };
-
-  // Get card color based on rarity
-  const getCardColor = (rarity: string) => {
-    switch (rarity) {
-      case "common": return "bg-gray-200 border-gray-300";
-      case "rare": return "bg-blue-200 border-blue-300";
-      case "epic": return "bg-purple-200 border-purple-300";
-      case "legendary": return "bg-yellow-200 border-yellow-300";
-      default: return "bg-gray-200 border-gray-300";
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 to-purple-900 text-white p-4">
-      <div className="max-w-4xl mx-auto">
-        <header className="text-center py-6">
-          <h1 className="text-4xl font-bold mb-2 flex items-center justify-center">
-            <Shield className="mr-2" /> Clash Tower Climb
-          </h1>
-          <p className="text-lg text-blue-200">Climb the tower, collect cards, and defeat bosses!</p>
+        body {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.2rem;
+        }
+        
+        .game-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 992px) {
+            .game-grid {
+                grid-template-columns: 1fr 2fr;
+            }
+        }
+        
+        .card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .card-content {
+            padding: 10px 0;
+        }
+        
+        .stats {
+            margin-bottom: 20px;
+        }
+        
+        .stat {
+            margin-bottom: 15px;
+        }
+        
+        .stat-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: #334155;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 5px;
+        }
+        
+        .health-fill {
+            background: var(--danger);
+        }
+        
+        .floor-fill {
+            background: var(--success);
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background: #9333ea;
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:hover:not(:disabled) {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .battle-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .fighters {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 20px 0;
+        }
+        
+        .fighter {
+            text-align: center;
+            width: 120px;
+        }
+        
+        .fighter-icon {
+            width: 80px;
+            height: 80px;
+            background: #334155;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        
+        .fighter-health {
+            margin-top: 10px;
+        }
+        
+        .vs {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+        
+        .deck-container {
+            margin-top: 20px;
+        }
+        
+        .deck-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .deck {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+        }
+        
+        .card-item {
+            background: #334155;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+        
+        .card-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card-header-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .card-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .card-type {
+            font-size: 0.7rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .card-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+        }
+        
+        .common { border-color: #94a3b8; }
+        .rare { border-color: #60a5fa; }
+        .epic { border-color: #a78bfa; }
+        .legendary { border-color: #fbbf24; }
+        
+        .battle-log {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            padding: 8px 0;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .victory-screen, .defeat-screen {
+            text-align: center;
+            padding: 30px 0;
+        }
+        
+        .result-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        
+        .victory {
+            color: var(--success);
+        }
+        
+        .defeat {
+            color: var(--danger);
+        }
+        
+        .reward-cards {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .reward-card {
+            width: 100px;
+            background: #334155;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .reward-card-name {
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+        
+        .reward-card-rarity {
+            font-size: 0.7rem;
+            margin-top: 3px;
+        }
+        
+        .common-bg { background: #94a3b8; }
+        .rare-bg { background: #60a5fa; }
+        .epic-bg { background: #a78bfa; }
+        .legendary-bg { background: #fbbf24; }
+        
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        
+        .boss-indicator {
+            color: var(--accent);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏰 Clash Tower Climb</h1>
+            <p class="subtitle">Climb the tower, collect cards, and defeat bosses!</p>
         </header>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Player Info */}
-          <Card className="bg-blue-800/50 border-blue-700">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Users className="mr-2" /> Player Info
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span>Floor</span>
-                    <span className="font-bold">{gameState.floor}</span>
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2.5">
-                    <div 
-                      className="bg-green-500 h-2.5 rounded-full" 
-                      style={{ width: `${(gameState.floor % 5) * 20}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-sm text-gray-300 mt-1">
-                    {5 - (gameState.floor % 5)} floors until next boss
-                  </p>
+        
+        <div class="game-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">👤 Player Info</h2>
                 </div>
-                
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span>Health</span>
-                    <span className="font-bold">{gameState.playerHealth}/1000</span>
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2.5">
-                    <div 
-                      className="bg-red-500 h-2.5 rounded-full" 
-                      style={{ width: `${(gameState.playerHealth / 1000) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={startBattle} 
-                    disabled={gameState.gameStatus !== "idle"}
-                    className="flex-1"
-                  >
-                    <Play className="mr-2 h-4 w-4" /> Battle
-                  </Button>
-                  <Button 
-                    onClick={resetGame}
-                    variant="outline"
-                    className="border-blue-500 text-blue-300 hover:bg-blue-700"
-                  >
-                    Reset
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Battle Area */}
-          <Card className="bg-blue-800/50 border-blue-700 lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center">
-                  {gameState.isBossFloor ? (
-                    <>
-                      <Star className="mr-2 text-yellow-400" /> Boss Battle
-                    </>
-                  ) : (
-                    <>
-                      <Shield className="mr-2" /> Battle Arena
-                    </>
-                  )}
-                </span>
-                <span className="text-lg">
-                  Floor {gameState.floor}
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {gameState.gameStatus === "idle" && (
-                <div className="text-center py-12">
-                  <div className="mb-6">
-                    <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold">Ready for Battle!</h3>
-                    <p className="text-gray-300">
-                      {gameState.isBossFloor 
-                        ? "A powerful boss awaits you!" 
-                        : "A challenger approaches!"}
-                    </p>
-                  </div>
-                  <Button onClick={startBattle} className="text-lg px-8 py-6">
-                    <Play className="mr-2 h-5 w-5" /> Start Battle
-                  </Button>
-                </div>
-              )}
-
-              {gameState.gameStatus === "battle" && gameState.currentEnemy && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <div className="text-center">
-                      <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16 mx-auto mb-2" />
-                      <h3 className="font-bold">You</h3>
-                      <div className="w-32 bg-gray-700 rounded-full h-2.5 mx-auto mt-2">
-                        <div 
-                          className="bg-green-500 h-2.5 rounded-full" 
-                          style={{ width: `${(gameState.playerHealth / 1000) * 100}%` }}
-                        ></div>
-                      </div>
-                      <p className="text-sm mt-1">{gameState.playerHealth}/1000</p>
+                <div class="card-content">
+                    <div class="stats">
+                        <div class="stat">
+                            <div class="stat-label">
+                                <span>Floor</span>
+                                <span id="floor-number">1</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div id="floor-progress" class="progress-fill floor-fill" style="width: 20%"></div>
+                            </div>
+                            <div id="floor-info" class="stat-info">4 floors until next boss</div>
+                        </div>
+                        
+                        <div class="stat">
+                            <div class="stat-label">
+                                <span>Health</span>
+                                <span id="player-health-value">1000/1000</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div id="player-health-bar" class="progress-fill health-fill" style="width: 100%"></div>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div className="text-3xl font-bold">VS</div>
+                    <div class="actions">
+                        <button id="battle-btn" class="btn btn-primary">⚔️ Battle</button>
+                        <button id="reset-btn" class="btn btn-outline">🔄 Reset Game</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title" id="battle-title">⚔️ Battle Arena</h2>
+                    <span id="floor-display">Floor 1</span>
+                </div>
+                <div class="card-content">
+                    <div id="idle-screen" class="battle-area">
+                        <div class="fighters">
+                            <div class="fighter">
+                                <div class="fighter-icon">👤</div>
+                                <h3>You</h3>
+                            </div>
+                            <div class="vs">VS</div>
+                            <div class="fighter">
+                                <div class="fighter-icon">👾</div>
+                                <h3 id="enemy-name">Enemy</h3>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <p id="battle-info">A challenger approaches!</p>
+                            <button id="start-battle-btn" class="btn btn-primary">⚔️ Start Battle</button>
+                        </div>
+                    </div>
                     
-                    <div className="text-center">
-                      <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16 mx-auto mb-2" />
-                      <h3 className="font-bold">{gameState.currentEnemy.name}</h3>
-                      <div className="w-32 bg-gray-700 rounded-full h-2.5 mx-auto mt-2">
-                        <div 
-                          className="bg-red-500 h-2.5 rounded-full" 
-                          style={{ width: `${(gameState.enemyHealth / gameState.currentEnemy.health) * 100}%` }}
-                        ></div>
-                      </div>
-                      <p className="text-sm mt-1">{gameState.enemyHealth}/{gameState.currentEnemy.health}</p>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-bold mb-2">Your Deck</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {gameState.playerDeck.map((card, index) => (
-                        <Card 
-                          key={`${card.id}-${index}`} 
-                          className={`${getCardColor(card.rarity)} border-2 cursor-pointer hover:opacity-90 transition-opacity`}
-                          onClick={() => useCard(card)}
-                        >
-                          <CardContent className="p-3">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h5 className="font-bold text-sm">{card.name}</h5>
-                                <p className="text-xs">Cost: {card.cost}</p>
-                              </div>
-                              <span className="text-xs bg-black/20 px-1 rounded">
-                                {card.type.charAt(0).toUpperCase()}
-                              </span>
+                    <div id="battle-screen" class="battle-area" style="display: none;">
+                        <div class="fighters">
+                            <div class="fighter">
+                                <div class="fighter-icon">👤</div>
+                                <h3>You</h3>
+                                <div class="fighter-health">
+                                    <div class="stat-label">
+                                        <span>HP</span>
+                                        <span id="player-battle-health">1000/1000</span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div id="player-battle-bar" class="progress-fill health-fill" style="width: 100%"></div>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="flex justify-between mt-2 text-xs">
-                              <span>D: {card.damage}</span>
-                              <span>H: {card.health}</span>
+                            <div class="vs">VS</div>
+                            <div class="fighter">
+                                <div class="fighter-icon">👾</div>
+                                <h3 id="battle-enemy-name">Enemy</h3>
+                                <div class="fighter-health">
+                                    <div class="stat-label">
+                                        <span>HP</span>
+                                        <span id="enemy-battle-health">0/0</span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div id="enemy-battle-bar" class="progress-fill health-fill" style="width: 100%"></div>
+                                    </div>
+                                </div>
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                        </div>
+                        
+                        <div class="deck-container">
+                            <h3 class="deck-title">🃏 Your Deck</h3>
+                            <div id="player-deck" class="deck">
+                                <!-- Cards will be inserted here -->
+                            </div>
+                        </div>
                     </div>
-                  </div>
-                </div>
-              )}
-
-              {gameState.gameStatus === "victory" && (
-                <div className="text-center py-8">
-                  <div className="text-5xl mb-4">🎉</div>
-                  <h3 className="text-2xl font-bold text-green-400 mb-2">Victory!</h3>
-                  <p className="mb-6">
-                    You defeated {gameState.currentEnemy?.name}!
-                  </p>
-                  <div className="mb-6">
-                    <h4 className="font-bold mb-2">Cards Collected:</h4>
-                    <div className="flex justify-center gap-2">
-                      {gameState.currentEnemy?.cards.map((card, index) => (
-                        <Card 
-                          key={`${card.id}-reward-${index}`} 
-                          className={`${getCardColor(card.rarity)} border-2 w-24`}
-                        >
-                          <CardContent className="p-2 text-center">
-                            <div className="text-xs font-bold truncate">{card.name}</div>
-                            <div className="text-xs mt-1">{card.rarity}</div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                    
+                    <div id="victory-screen" class="victory-screen" style="display: none;">
+                        <div class="result-icon">🎉</div>
+                        <h2 class="victory">Victory!</h2>
+                        <p id="victory-message">You defeated the enemy!</p>
+                        
+                        <h3>Rewards:</h3>
+                        <div id="reward-cards" class="reward-cards">
+                            <!-- Reward cards will be inserted here -->
+                        </div>
+                        
+                        <button id="collect-btn" class="btn btn-primary">Collect Cards ➡️</button>
                     </div>
-                  </div>
-                  <Button onClick={collectCards} className="px-8 py-3">
-                    Collect Cards <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
+                    
+                    <div id="defeat-screen" class="defeat-screen" style="display: none;">
+                        <div class="result-icon">💀</div>
+                        <h2 class="defeat">Defeat!</h2>
+                        <p id="defeat-message">You were defeated!</p>
+                        <button id="try-again-btn" class="btn btn-primary">Try Again</button>
+                    </div>
                 </div>
-              )}
-
-              {gameState.gameStatus === "defeat" && (
-                <div className="text-center py-8">
-                  <div className="text-5xl mb-4">💀</div>
-                  <h3 className="text-2xl font-bold text-red-400 mb-2">Defeat!</h3>
-                  <p className="mb-6">
-                    You were defeated by {gameState.currentEnemy?.name}!
-                  </p>
-                  <Button onClick={resetGame} className="px-8 py-3">
-                    Try Again
-                  </Button>
+            </div>
+            
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="card-header">
+                    <h2 class="card-title">📜 Battle Log</h2>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Battle Log */}
-          <Card className="bg-blue-800/50 border-blue-700 lg:col-span-3">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Heart className="mr-2" /> Battle Log
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-40 overflow-y-auto bg-black/20 rounded-lg p-3">
-                {gameState.battleLog.map((log, index) => (
-                  <div key={index} className="py-1 border-b border-gray-700 last:border-0">
-                    {log}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                <div class="card-content">
+                    <div id="battle-log" class="battle-log">
+                        <div class="log-entry">Welcome to Clash Tower Climb!</div>
+                        <div class="log-entry">You received a new deck for floor 1!</div>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <footer className="text-center py-6 text-gray-400 text-sm">
-          <p>Clash Tower Climb - A Clash Royale-inspired tower climbing game</p>
-          <p className="mt-1">Climb floors, collect cards, and defeat bosses every 5 floors!</p>
+        
+        <footer>
+            <p>Clash Tower Climb - A Clash Royale-inspired tower climbing game</p>
+            <p>Climb floors, collect cards, and defeat bosses every 5 floors!</p>
         </footer>
-      </div>
     </div>
-  );
-}
+
+    <script>
+        // Game data
+        const cardDatabase = [
+            { id: "goblin", name: "Goblin", damage: 80, health: 50, cost: 2, rarity: "common", type: "troop" },
+            { id: "archer", name: "Archer", damage: 70, health: 30, cost: 3, rarity: "common", type: "troop" },
+            { id: "knight", name: "Knight", damage: 60, health: 120, cost: 3, rarity: "common", type: "troop" },
+            { id: "giant", name: "Giant", damage: 120, health: 300, cost: 5, rarity: "rare", type: "troop" },
+            { id: "wizard", name: "Wizard", damage: 150, health: 80, cost: 5, rarity: "rare", type: "troop" },
+            { id: "fireball", name: "Fireball", damage: 200, health: 0, cost: 4, rarity: "rare", type: "spell" },
+            { id: "lightning", name: "Lightning", damage: 300, health: 0, cost: 6, rarity: "epic", type: "spell" },
+            { id: "prince", name: "Prince", damage: 180, health: 150, cost: 5, rarity: "epic", type: "troop" },
+            { id: "dragon", name: "Dragon", damage: 250, health: 200, cost: 4, rarity: "epic", type: "troop" },
+            { id: "pekkah", name: "P.E.K.K.A", damage: 300, health: 400, cost: 7, rarity: "epic", type: "troop" },
+            { id: "miner", name: "Miner", damage: 100, health: 120, cost: 3, rarity: "legendary", type: "troop" },
+            { id: "lava_hound", name: "Lava Hound", damage: 50, health: 500, cost: 7, rarity: "legendary", type: "troop" }
+        ];
+
+        const enemyDatabase = [
+            {
+                id: "goblin_gang",
+                name: "Goblin Gang",
+                health: 300,
+                damage: 50,
+                cards: [
+                    cardDatabase[0], // Goblin
+                    cardDatabase[1]  // Archer
+                ]
+            },
+            {
+                id: "barbarian_horde",
+                name: "Barbarian Horde",
+                health: 400,
+                damage: 70,
+                cards: [
+                    cardDatabase[2], // Knight
+                    cardDatabase[0]  // Goblin
+                ]
+            },
+            {
+                id: "skeleton_army",
+                name: "Skeleton Army",
+                health: 350,
+                damage: 60,
+                cards: [
+                    cardDatabase[1], // Archer
+                    cardDatabase[2]  // Knight
+                ]
+            },
+            {
+                id: "balloon_squad",
+                name: "Balloon Squad",
+                health: 500,
+                damage: 100,
+                cards: [
+                    cardDatabase[3], // Giant
+                    cardDatabase[4]  // Wizard
+                ]
+            },
+            {
+                id: "royal_giant",
+                name: "Royal Giant",
+                health: 600,
+                damage: 120,
+                cards: [
+                    cardDatabase[3], // Giant
+                    cardDatabase[5]  // Fireball
+                ]
+            }
+        ];
+
+        const bossDatabase = [
+            {
+                id: "giant_goblin",
+                name: "Giant Goblin",
+                health: 1000,
+                damage: 150,
+                cards: [
+                    cardDatabase[3], // Giant
+                    cardDatabase[4], // Wizard
+                    cardDatabase[5]  // Fireball
+                ]
+            },
+            {
+                id: "lava_hound_boss",
+                name: "Lava Hound Boss",
+                health: 1500,
+                damage: 200,
+                cards: [
+                    cardDatabase[9], // P.E.K.K.A
+                    cardDatabase[8], // Dragon
+                    cardDatabase[6], // Lightning
+                    cardDatabase[7]  // Prince
+                ]
+            },
+            {
+                id: "royal_champion",
+                name: "Royal Champion",
+                health: 2000,
+                damage: 250,
+                cards: [
+                    cardDatabase[10], // Miner
+                    cardDatabase[11], // Lava Hound
+                    cardDatabase[9],  // P.E.K.K.A
+                    cardDatabase[8],  // Dragon
+                    cardDatabase[7]   // Prince
+                ]
+            }
+        ];
+
+        // Game state
+        const gameState = {
+            floor: 1,
+            playerDeck: [],
+            currentEnemy: null,
+            battleLog: ["Welcome to Clash Tower Climb!", "You received a new deck for floor 1!"],
+            gameStatus: "idle", // idle, battle, victory, defeat
+            playerHealth: 1000,
+            enemyHealth: 0,
+            isBossFloor: false
+        };
+
+        // DOM Elements
+        const elements = {
+            floorNumber: document.getElementById("floor-number"),
+            floorProgress: document.getElementById("floor-progress"),
+            floorInfo: document.getElementById("floor-info"),
+            playerHealthValue: document.getElementById("player-health-value"),
+            playerHealthBar: document.getElementById("player-health-bar"),
+            battleBtn: document.getElementById("battle-btn"),
+            resetBtn: document.getElementById("reset-btn"),
+            battleTitle: document.getElementById("battle-title"),
+            floorDisplay: document.getElementById("floor-display"),
+            enemyName: document.getElementById("enemy-name"),
+            battleInfo: document.getElementById("battle-info"),
+            startBattleBtn: document.getElementById("start-battle-btn"),
+            idleScreen: document.getElementById("idle-screen"),
+            battleScreen: document.getElementById("battle-screen"),
+            playerBattleHealth: document.getElementById("player-battle-health"),
+            playerBattleBar: document.getElementById("player-battle-bar"),
+            battleEnemyName: document.getElementById("battle-enemy-name"),
+            enemyBattleHealth: document.getElementById("enemy-battle-health"),
+            enemyBattleBar: document.getElementById("enemy-battle-bar"),
+            playerDeck: document.getElementById("player-deck"),
+            victoryScreen: document.getElementById("victory-screen"),
+            victoryMessage: document.getElementById("victory-message"),
+            rewardCards: document.getElementById("reward-cards"),
+            collectBtn: document.getElementById("collect-btn"),
+            defeatScreen: document.getElementById("defeat-screen"),
+            defeatMessage: document.getElementById("defeat-message"),
+            tryAgainBtn: document.getElementById("try-again-btn"),
+            battleLog: document.getElementById("battle-log")
+        };
+
+        // Initialize game
+        function initGame() {
+            generateRandomDeck();
+            updateUI();
+            renderBattleLog();
+            
+            // Event listeners
+            elements.battleBtn.addEventListener("click", startBattle);
+            elements.resetBtn.addEventListener("click", resetGame);
+            elements.startBattleBtn.addEventListener("click", startBattle);
+            elements.collectBtn.addEventListener("click", collectCards);
+            elements.tryAgainBtn.addEventListener("click", resetGame);
+        }
+
+        // Generate a random deck for the player
+        function generateRandomDeck() {
+            const deck = [];
+            const commonCards = cardDatabase.filter(card => card.rarity === "common");
+            const rareCards = cardDatabase.filter(card => card.rarity === "rare");
+            const epicCards = cardDatabase.filter(card => card.rarity === "epic");
+            const legendaryCards = cardDatabase.filter(card => card.rarity === "legendary");
+            
+            // Add 4 common cards
+            for (let i = 0; i < 4; i++) {
+                const randomIndex = Math.floor(Math.random() * commonCards.length);
+                deck.push({...commonCards[randomIndex]});
+            }
+            
+            // Add 2 rare cards
+            for (let i = 0; i < 2; i++) {
+                const randomIndex = Math.floor(Math.random() * rareCards.length);
+                deck.push({...rareCards[randomIndex]});
+            }
+            
+            // Add 1 epic card
+            const randomEpicIndex = Math.floor(Math.random() * epicCards.length);
+            deck.push({...epicCards[randomEpicIndex]});
+            
+            // Add 1 legendary card (10% chance)
+            if (Math.random() < 0.1) {
+                const randomLegendaryIndex = Math.floor(Math.random() * legendaryCards.length);
+                deck.push({...legendaryCards[randomEpicIndex]});
+            }
+            
+            gameState.playerDeck = deck;
+            addToBattleLog(`You received a new deck for floor ${gameState.floor}!`);
+        }
+
+        // Start a battle with a random enemy
+        function startBattle() {
+            const isBossFloor = gameState.floor % 5 === 0;
+            const enemyPool = isBossFloor ? bossDatabase : enemyDatabase;
+            const randomIndex = Math.floor(Math.random() * enemyPool.length);
+            const enemy = {...enemyPool[randomIndex]};
+            
+            gameState.currentEnemy = enemy;
+            gameState.gameStatus = "battle";
+            gameState.enemyHealth = enemy.health;
+            gameState.isBossFloor = isBossFloor;
+            
+            addToBattleLog(`Battle started against ${enemy.name}!`);
+            updateUI();
+            renderBattleScreen();
+        }
+
+        // Player uses a card in battle
+        function useCard(card) {
+            if (gameState.gameStatus !== "battle" || !gameState.currentEnemy) return;
+            
+            const damage = card.damage;
+            const newEnemyHealth = Math.max(0, gameState.enemyHealth - damage);
+            
+            addToBattleLog(`You used ${card.name} dealing ${damage} damage!`);
+            gameState.enemyHealth = newEnemyHealth;
+            
+            // Update UI immediately
+            elements.enemyBattleHealth.textContent = `${newEnemyHealth}/${gameState.currentEnemy.health}`;
+            elements.enemyBattleBar.style.width = `${(newEnemyHealth / gameState.currentEnemy.health) * 100}%`;
+            
+            // Check if enemy is defeated
+            if (newEnemyHealth <= 0) {
+                addToBattleLog(`You defeated ${gameState.currentEnemy.name}!`);
+                gameState.gameStatus = "victory";
+                updateUI();
+                renderVictoryScreen();
+                return;
+            }
+            
+            // Enemy counterattack after a delay
+            setTimeout(() => {
+                const enemyDamage = gameState.currentEnemy.damage;
+                const newPlayerHealth = Math.max(0, gameState.playerHealth - enemyDamage);
+                
+                addToBattleLog(`${gameState.currentEnemy.name} attacked for ${enemyDamage} damage!`);
+                gameState.playerHealth = newPlayerHealth;
+                
+                // Update UI
+                elements.playerBattleHealth.textContent = `${newPlayerHealth}/1000`;
+                elements.playerBattleBar.style.width = `${(newPlayerHealth / 1000) * 100}%`;
+                elements.playerHealthValue.textContent = `${newPlayerHealth}/1000`;
+                elements.playerHealthBar.style.width = `${(newPlayerHealth / 1000) * 100}%`;
+                
+                // Check if player is defeated
+                if (newPlayerHealth <= 0) {
+                    addToBattleLog(`You were defeated by ${gameState.currentEnemy.name}!`);
+                    gameState.gameStatus = "defeat";
+                    updateUI();
+                    renderDefeatScreen();
+                }
+            }, 800);
+        }
+
+        // Advance to next floor
+        function advanceFloor() {
+            if (gameState.gameStatus === "defeat") return;
+            
+            gameState.floor++;
+            const isBossFloor = gameState.floor % 5 === 0;
+            
+            gameState.gameStatus = "idle";
+            gameState.playerHealth = 1000;
+            gameState.isBossFloor = isBossFloor;
+            
+            addToBattleLog(`You advanced to floor ${gameState.floor}! ${isBossFloor ? "Boss floor!" : ""}`);
+            
+            generateRandomDeck();
+            updateUI();
+        }
+
+        // Collect cards after victory
+        function collectCards() {
+            if (!gameState.currentEnemy) return;
+            
+            const cardsToCollect = [...gameState.currentEnemy.cards];
+            
+            // Add collected cards to player deck
+            cardsToCollect.forEach(card => {
+                // Only add if not already in deck (simplified)
+                if (!gameState.playerDeck.some(c => c.id === card.id)) {
+                    gameState.playerDeck.push({...card});
+                }
+            });
+            
+            addToBattleLog(`You collected cards from ${gameState.currentEnemy.name}!`);
+            advanceFloor();
+        }
+
+        // Reset game
+        function resetGame() {
+            gameState.floor = 1;
+            gameState.playerDeck = [];
+            gameState.currentEnemy = null;
+            gameState.battleLog = ["Game reset! Starting new climb...", "You received a new deck for floor 1!"];
+            gameState.gameStatus = "idle";
+            gameState.playerHealth = 1000;
+            gameState.enemyHealth = 0;
+            gameState.isBossFloor = false;
+            
+            generateRandomDeck();
+            updateUI();
+            renderBattleLog();
+        }
+
+        // Add entry to battle log
+        function addToBattleLog(message) {
+            gameState.battleLog.push(message);
+            renderBattleLog();
+        }
+
+        // Render battle log
+        function renderBattleLog() {
+            elements.battleLog.innerHTML = "";
+            gameState.battleLog.forEach(entry => {
+                const logEntry = document.createElement("div");
+                logEntry.className = "log-entry";
+                logEntry.textContent = entry;
+                elements.battleLog.appendChild(logEntry);
+            });
+            elements.battleLog.scrollTop = elements.battleLog.scrollHeight;
+        }
+
+        // Render battle screen
+        function renderBattleScreen() {
+            if (!gameState.currentEnemy) return;
+            
+            elements.idleScreen.style.display = "none";
+            elements.battleScreen.style.display = "block";
+            elements.victoryScreen.style.display = "none";
+            elements.defeatScreen.style.display = "none";
+            
+            elements.battleEnemyName.textContent = gameState.currentEnemy.name;
+            elements.enemyBattleHealth.textContent = `${gameState.enemyHealth}/${gameState.currentEnemy.health}`;
+            elements.enemyBattleBar.style.width = `${(gameState.enemyHealth / gameState.currentEnemy.health) * 100}%`;
+            
+            elements.playerBattleHealth.textContent = `${gameState.playerHealth}/1000`;
+            elements.playerBattleBar.style.width = `${(gameState.playerHealth / 1000) * 100}%`;
+            
+            // Render player deck
+            elements.playerDeck.innerHTML = "";
+            gameState.playerDeck.forEach(card => {
+                const cardElement = document.createElement("div");
+                cardElement.className = `card-item ${card.rarity}`;
+                cardElement.innerHTML = `
+                    <div class="card-header-row">
+                        <div class="card-name">${card.name}</div>
+                        <div class="card-type">${card.type.charAt(0).toUpperCase()}</div>
+                    </div>
+                    <div class="card-stats">
+                        <span>D: ${card.damage}</span>
+                        <span>H: ${card.health}</span>
+                    </div>
+                    <div class="card-stats">
+                        <span>Cost: ${card.cost}</span>
+                        <span>${card.rarity}</span>
+                    </div>
+                `;
+                cardElement.addEventListener("click", () => useCard(card));
+                elements.playerDeck.appendChild(cardElement);
+            });
+        }
+
+        // Render victory screen
+        function renderVictoryScreen() {
+            elements.idleScreen.style.display = "none";
+            elements.battleScreen.style.display = "none";
+            elements.victoryScreen.style.display = "block";
+            elements.defeatScreen.style.display = "none";
+            
+            elements.victoryMessage.textContent = `You defeated ${gameState.currentEnemy.name}!`;
+            
+            // Render reward cards
+            elements.rewardCards.innerHTML = "";
+            if (gameState.currentEnemy) {
+                gameState.currentEnemy.cards.forEach(card => {
+                    const cardElement = document.createElement("div");
+                    cardElement.className = `reward-card ${card.rarity}-bg`;
+                    cardElement.innerHTML = `
+                        <div>${card.name.charAt(0)}</div>
+                        <div class="reward-card-name">${card.name}</div>
+                        <div class="reward-card-rarity">${card.rarity}</div>
+                    `;
+                    elements.rewardCards.appendChild(cardElement);
+                });
+            }
+        }
+
+        // Render defeat screen
+        function renderDefeatScreen() {
+            elements.idleScreen.style.display = "none";
+            elements.battleScreen.style.display = "none";
+            elements.victoryScreen.style.display = "none";
+            elements.defeatScreen.style.display = "block";
+            
+            elements.defeatMessage.textContent = `You were defeated by ${gameState.currentEnemy.name}!`;
+        }
+
+        // Update UI elements
+        function updateUI() {
+            elements.floorNumber.textContent = gameState.floor;
+            elements.floorDisplay.textContent = `Floor ${gameState.floor}`;
+            
+            // Update floor progress
+            const floorsUntilBoss = 5 - (gameState.floor % 5);
+            const progressPercent = ((5 - floorsUntilBoss) / 5) * 100;
+            elements.floorProgress.style.width = `${progressPercent}%`;
+            elements.floorInfo.textContent = `${floorsUntilBoss} floors until next boss`;
+            
+            // Update player health
+            elements.playerHealthValue.textContent = `${gameState.playerHealth}/1000`;
+            elements.playerHealthBar.style.width = `${(gameState.playerHealth / 1000) * 100}%`;
+            
+            // Update battle title
+            if (gameState.isBossFloor) {
+                elements.battleTitle.innerHTML = "⚔️ <span class='boss-indicator'>Boss Battle</span>";
+            } else {
+                elements.battleTitle.textContent = "⚔️ Battle Arena";
+            }
+            
+            // Update idle screen
+            if (gameState.gameStatus === "idle") {
+                elements.idleScreen.style.display = "block";
+                elements.battleScreen.style.display = "none";
+                elements.victoryScreen.style.display = "none";
+                elements.defeatScreen.style.display = "none";
+                
+                if (gameState.isBossFloor) {
+                    elements.battleInfo.textContent = "A powerful boss awaits you!";
+                    elements.enemyName.textContent = "Boss";
+                } else {
+                    elements.battleInfo.textContent = "A challenger approaches!";
+                    elements.enemyName.textContent = "Enemy";
+                }
+            }
+            
+            // Update battle button
+            elements.battleBtn.disabled = gameState.gameStatus !== "idle";
+        }
+
+        // Initialize the game when the page loads
+        window.addEventListener("DOMContentLoaded", initGame);
+    </script>
+</body>
+</html>
