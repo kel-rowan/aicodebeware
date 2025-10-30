@@ -3,862 +3,711 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yu-Gi-Oh Inspired Card Game</title>
+    <title>Snake Bullet Hell</title>
     <style>
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         body {
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            color: #fff;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
             min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
             padding: 20px;
+            overflow: hidden;
         }
         
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
         }
         
         header {
-            text-align: center;
-            padding: 20px 0;
             margin-bottom: 20px;
         }
         
         h1 {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             margin-bottom: 10px;
-            text-shadow: 0 0 10px #4cc9f0;
-            background: linear-gradient(to right, #f72585, #4361ee, #4cc9f0);
+            background: linear-gradient(45deg, #00dbde, #fc00ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
         }
         
-        .subtitle {
-            font-size: 1.2rem;
-            color: #a9d6e5;
-            margin-bottom: 20px;
-        }
-        
-        .game-container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-        
-        @media (min-width: 768px) {
-            .game-container {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-        
-        .panel {
-            background: rgba(25, 25, 50, 0.8);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(92, 107, 192, 0.3);
-        }
-        
-        .panel-title {
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-            color: #4cc9f0;
+        .stats {
             display: flex;
-            align-items: center;
-            gap: 10px;
+            justify-content: center;
+            gap: 30px;
+            margin: 15px 0;
         }
         
-        .life-points {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 10px 15px;
+        .stat-box {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 12px 25px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 120px;
         }
         
-        .lp-value {
+        .stat-value {
             font-size: 1.8rem;
             font-weight: bold;
-            color: #f72585;
-        }
-        
-        .card-area {
-            min-height: 150px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .card {
-            width: 120px;
-            height: 170px;
-            background: linear-gradient(135deg, #2b2d42, #4a4e69);
-            border-radius: 10px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            border: 2px solid transparent;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
-            border-color: #4cc9f0;
-        }
-        
-        .card.selected {
-            border-color: #f72585;
-            box-shadow: 0 0 15px #f72585;
-        }
-        
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-        
-        .card-name {
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-        
-        .card-type {
-            background: #4361ee;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-        }
-        
-        .card-image {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-            margin: 5px 0;
-        }
-        
-        .card-icon {
-            font-size: 2rem;
-        }
-        
-        .card-stats {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            margin-top: 5px;
-        }
-        
-        .attack {
-            color: #f72585;
-        }
-        
-        .defense {
             color: #4cc9f0;
         }
         
-        .card-description {
-            font-size: 0.7rem;
-            color: #a9d6e5;
-            margin-top: 5px;
-            line-height: 1.3;
+        .game-board {
+            position: relative;
+            width: 600px;
+            height: 400px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(30, 1fr);
+            grid-template-rows: repeat(20, 1fr);
+        }
+        
+        .cell {
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        
+        .snake {
+            background: linear-gradient(135deg, #4cc9f0, #4361ee);
+            border-radius: 3px;
+            z-index: 10;
+        }
+        
+        .snake-head {
+            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            border-radius: 4px;
+            z-index: 11;
+        }
+        
+        .food {
+            background: linear-gradient(135deg, #f72585, #b5179e);
+            border-radius: 50%;
+            animation: pulse 1s infinite alternate;
+            z-index: 5;
+        }
+        
+        .enemy {
+            background: linear-gradient(135deg, #ff6b6b, #ff0000);
+            border-radius: 50%;
+            z-index: 8;
+            box-shadow: 0 0 8px #ff0000;
+        }
+        
+        .bullet {
+            background: linear-gradient(135deg, #ffd166, #ff9e00);
+            border-radius: 50%;
+            z-index: 7;
+            box-shadow: 0 0 6px #ffd166;
         }
         
         .controls {
+            margin: 20px 0;
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 20px;
+            justify-content: center;
+            gap: 15px;
         }
         
         button {
-            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            background: linear-gradient(45deg, #4361ee, #3a0ca3);
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            border-radius: 50px;
             cursor: pointer;
-            font-weight: bold;
             transition: all 0.3s ease;
-            flex: 1;
-            min-width: 120px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
         
         button:hover {
             transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
         
-        button:disabled {
-            background: #555;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
+        button:active {
+            transform: translateY(1px);
         }
         
-        .btn-primary {
-            background: linear-gradient(135deg, #f72585, #b5179e);
-        }
-        
-        .btn-secondary {
-            background: linear-gradient(135deg, #4cc9f0, #4895ef);
-        }
-        
-        .game-info {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-            text-align: center;
-            font-size: 1.1rem;
-            min-height: 60px;
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
+            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            justify-content: center;
-        }
-        
-        .phase-indicator {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 15px 0;
-        }
-        
-        .phase {
-            padding: 8px 15px;
-            border-radius: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            font-size: 0.9rem;
-        }
-        
-        .phase.active {
-            background: linear-gradient(135deg, #f72585, #b5179e);
-            box-shadow: 0 0 10px rgba(247, 37, 133, 0.5);
-        }
-        
-        .deck-builder {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .pack-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .pack-btn {
-            flex: 1;
-            min-width: 120px;
-        }
-        
-        .deck-counter {
-            text-align: center;
-            margin: 15px 0;
-            font-size: 1.2rem;
-        }
-        
-        .deck-counter span {
-            color: #f72585;
-            font-weight: bold;
+            background: rgba(10, 10, 30, 0.9);
+            z-index: 100;
+            border-radius: 10px;
         }
         
         .hidden {
             display: none;
         }
         
-        .card-back {
-            background: linear-gradient(135deg, #f72585, #b5179e);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 0.8rem;
-            text-align: center;
+        .screen h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #4cc9f0;
+        }
+        
+        .screen p {
+            font-size: 1.2rem;
+            max-width: 80%;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .instructions {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px auto;
+            max-width: 600px;
+            text-align: left;
+        }
+        
+        .instructions h3 {
+            color: #f72585;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+        
+        .key {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 10px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        @keyframes pulse {
+            from { transform: scale(0.9); }
+            to { transform: scale(1.1); }
+        }
+        
+        @keyframes flash {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        
+        .flash {
+            animation: flash 0.3s;
         }
         
         footer {
-            text-align: center;
-            margin-top: 30px;
-            padding: 20px;
-            color: #a9d6e5;
-            font-size: 0.9rem;
-        }
-        
-        .pack-info {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 10px;
-            border-radius: 8px;
-            margin: 10px 0;
+            margin-top: 20px;
+            color: rgba(255, 255, 255, 0.6);
             font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="game-container">
         <header>
-            <h1>Yu-Gi-Oh Inspired Card Game</h1>
-            <p class="subtitle">Build your deck and duel against the CPU!</p>
+            <h1>Snake Bullet Hell</h1>
+            <div class="stats">
+                <div class="stat-box">
+                    <div>SCORE</div>
+                    <div id="score" class="stat-value">0</div>
+                </div>
+                <div class="stat-box">
+                    <div>LEVEL</div>
+                    <div id="level" class="stat-value">1</div>
+                </div>
+                <div class="stat-box">
+                    <div>LIVES</div>
+                    <div id="lives" class="stat-value">3</div>
+                </div>
+            </div>
         </header>
         
-        <div class="game-container">
-            <div class="panel">
-                <h2 class="panel-title">Deck Builder</h2>
+        <div class="game-board">
+            <div class="grid" id="grid"></div>
+            
+            <div id="start-screen" class="screen">
+                <h2>Snake Bullet Hell</h2>
+                <p>Survive as long as possible! Control the snake with arrow keys. Avoid enemy bullets and don't hit walls!</p>
+                <button id="start-btn">Start Game</button>
                 
-                <div class="pack-info">
-                    <p><strong>Starter Deck:</strong> 20 cards with strong synergy</p>
-                    <p><strong>Dragon Pack:</strong> 5 random cards from a pool of 20</p>
-                </div>
-                
-                <div class="pack-selector">
-                    <button id="starterPack" class="pack-btn btn-primary">Starter Pack</button>
-                    <button id="dragonPack" class="pack-btn btn-secondary">Dragon Pack</button>
-                </div>
-                
-                <div class="deck-counter">Your Deck: <span id="deckCount">0</span>/20 cards</div>
-                
-                <div id="cardPack" class="deck-builder">
-                    <!-- Cards will be populated here -->
-                </div>
-                
-                <div class="controls">
-                    <button id="startGame" disabled>Start Game</button>
+                <div class="instructions">
+                    <h3>How to Play</h3>
+                    <ul>
+                        <li>Use <span class="key">←</span> <span class="key">↑</span> <span class="key">→</span> <span class="key">↓</span> arrow keys to move the snake</li>
+                        <li>Eat <span style="color:#f72585">food</span> to grow longer and earn points</li>
+                        <li>Avoid <span style="color:#ff6b6b">enemies</span> and their <span style="color:#ffd166">bullets</span></li>
+                        <li>Every 100 points advances you to the next level</li>
+                        <li>Each level adds more enemies and faster bullets</li>
+                    </ul>
                 </div>
             </div>
             
-            <div id="gameScreen" class="panel hidden">
-                <h2 class="panel-title">Game Board</h2>
-                
-                <!-- Opponent Area -->
-                <div class="life-points">
-                    <span>Opponent</span>
-                    <span class="lp-value" id="opponentLP">8000</span>
-                </div>
-                
-                <div class="card-area" id="opponentField">
-                    <!-- Opponent field cards -->
-                </div>
-                
-                <div class="card-area" id="opponentHand">
-                    <!-- Opponent hand cards (hidden) -->
-                </div>
-                
-                <!-- Game Info -->
-                <div class="game-info" id="gameMessage">
-                    Select cards for your deck (min 20 cards)
-                </div>
-                
-                <div class="phase-indicator">
-                    <div class="phase" id="drawPhase">Draw</div>
-                    <div class="phase" id="mainPhase">Main</div>
-                    <div class="phase" id="battlePhase">Battle</div>
-                    <div class="phase" id="endPhase">End</div>
-                </div>
-                
-                <!-- Player Area -->
-                <div class="card-area" id="playerHand">
-                    <!-- Player hand cards -->
-                </div>
-                
-                <div class="card-area" id="playerField">
-                    <!-- Player field cards -->
-                </div>
-                
-                <div class="life-points">
-                    <span>You</span>
-                    <span class="lp-value" id="playerLP">8000</span>
-                </div>
-                
-                <div class="controls">
-                    <button id="nextPhase">Next Phase</button>
-                    <button id="endTurn">End Turn</button>
-                </div>
+            <div id="game-over-screen" class="screen hidden">
+                <h2>Game Over</h2>
+                <p>Your final score: <span id="final-score">0</span></p>
+                <p>Level reached: <span id="final-level">1</span></p>
+                <button id="restart-btn">Play Again</button>
             </div>
         </div>
         
+        <div class="controls">
+            <button id="pause-btn">Pause</button>
+            <button id="reset-btn">Reset</button>
+        </div>
+        
         <footer>
-            <p>Yu-Gi-Oh Inspired Card Game | Created with HTML, CSS, and JavaScript</p>
+            <p>Survive the bullet hell! Each level increases difficulty.</p>
         </footer>
     </div>
 
     <script>
+        // Game constants
+        const GRID_WIDTH = 30;
+        const GRID_HEIGHT = 20;
+        const CELL_SIZE = 20;
+        const INITIAL_SPEED = 150;
+        const BULLET_SPEED = 3;
+        
         // Game state
-        const gameState = {
-            playerDeck: [],
-            opponentDeck: [],
-            playerHand: [],
-            opponentHand: [],
-            playerField: [],
-            opponentField: [],
-            playerLP: 8000,
-            opponentLP: 8000,
-            currentPhase: 'draw',
-            playerTurn: true,
-            selectedCard: null,
-            targetCard: null
-        };
-
-        // Card data
-        const starterDeck = [
-            { id: '1', name: 'Polymerization', type: 'spell', attack: 0, defense: 0, description: 'Fusion: Combine 2 monsters to create a powerful fusion monster.' },
-            { id: '2', name: 'Dragon Fusion', type: 'spell', attack: 0, defense: 0, description: 'Special fusion for dragon-type monsters.' },
-            { id: '3', name: 'Mystic Plasma Zone', type: 'spell', attack: 0, defense: 0, description: 'Increases ATK of all Dragon-Type monsters by 500.' },
-            { id: '4', name: 'Dragon Treasure', type: 'spell', attack: 0, defense: 0, description: 'Equip to a Dragon-Type monster. Increases ATK by 300.' },
-            { id: '5', name: 'Mirror Force', type: 'trap', attack: 0, defense: 0, description: 'When opponent declares attack, destroy all attacking monsters.' },
-            { id: '6', name: 'Dragon Capture Jar', type: 'trap', attack: 0, defense: 0, description: 'Flip all face-up Dragon-Type monsters to Defense Position.' },
-            { id: '7', name: 'Blue-Eyes White Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'This legendary dragon is a powerful engine of destruction.' },
-            { id: '8', name: 'Blue-Eyes Ultimate Dragon', type: 'monster', attack: 4500, defense: 3800, description: 'Fusion: 3 Blue-Eyes White Dragons. The ultimate dragon.' },
-            { id: '9', name: 'White Stone of Ancients', type: 'monster', attack: 300, defense: 500, description: 'When destroyed, special summon 1 Dragon-Type monster from deck.' },
-            { id: '10', name: 'Sage with Eyes of Blue', type: 'monster', attack: 1800, defense: 200, description: 'Can special summon Blue-Eyes White Dragon from hand.' },
-            { id: '11', name: 'Blue-Eyes Spirit Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'Cannot be destroyed by battle. Prevents multiple attacks.' },
-            { id: '12', name: 'Azure-Eyes Silver Dragon', type: 'monster', attack: 2600, defense: 2100, description: 'When normal summoned, special summon 1 Dragon from hand.' },
-            { id: '13', name: 'Galaxy-Eyes Photon Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'When attacking, destroy opponent monster with lower ATK.' },
-            { id: '14', name: 'Neo Blue-Eyes Ultimate Dragon', type: 'monster', attack: 4500, defense: 3800, description: 'Can attack all opponent monsters once each.' },
-            { id: '15', name: 'Blue-Eyes Chaos MAX Dragon', type: 'monster', attack: 4000, defense: 3500, description: 'Cannot be destroyed by card effects. ATK increases by 1000.' },
-            { id: '16', name: 'Blue-Eyes Alternative White Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'Special summon from hand by banishing 1 Dragon.' },
-            { id: '17', name: 'Blue-Eyes Twin Burst Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'Can attack twice during the same Battle Phase.' },
-            { id: '18', name: 'Blue-Eyes Solid Dragon', type: 'monster', attack: 2500, defense: 3000, description: 'Cannot be targeted for attacks if you control a Dragon.' },
-            { id: '19', name: 'Blue-Eyes Chaos Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'When normal summoned, destroy all opponent spells/traps.' },
-            { id: '20', name: 'Blue-Eyes Toon Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'Can attack directly if opponent controls no monsters.' }
-        ];
-
-        const dragonPool = [
-            { id: '21', name: 'Red-Eyes B. Dragon', type: 'monster', attack: 2400, defense: 2000, description: 'A ferocious dragon with a deadly attack.' },
-            { id: '22', name: 'Meteor Dragon', type: 'monster', attack: 1800, defense: 2000, description: 'A dragon created from a meteorite.' },
-            { id: '23', name: 'B. Skull Dragon', type: 'monster', attack: 2500, defense: 2000, description: 'A powerful dragon born from the fusion of two dragons.' },
-            { id: '24', name: 'Darkfire Dragon', type: 'monster', attack: 1500, defense: 1250, description: 'A dragon with a dark flame that burns any opponent.' },
-            { id: '25', name: 'Curse of Dragon', type: 'monster', attack: 2000, defense: 1500, description: 'A wicked dragon that taps into dark forces.' },
-            { id: '26', name: 'Tri-Horned Dragon', type: 'monster', attack: 2850, defense: 2350, description: 'A powerful dragon with three sharp horns.' },
-            { id: '27', name: 'Serpent Night Dragon', type: 'monster', attack: 2350, defense: 2400, description: 'A dragon that flies through the night sky.' },
-            { id: '28', name: 'B. Dragon Jungle King', type: 'monster', attack: 2100, defense: 1800, description: 'A dragon that rules the jungle with an iron fist.' },
-            { id: '29', name: 'Twin-Headed Behemoth', type: 'monster', attack: 1500, defense: 1200, description: 'A dragon with two heads that attacks twice.' },
-            { id: '30', name: 'Koumori Dragon', type: 'monster', attack: 1500, defense: 1200, description: 'A bat-like dragon that swoops down on enemies.' },
-            { id: '31', name: 'Cave Dragon', type: 'monster', attack: 2000, defense: 1500, description: 'A dragon that dwells in dark caves.' },
-            { id: '32', name: 'Armed Dragon LV5', type: 'monster', attack: 2400, defense: 1700, description: 'A dragon with a powerful spear.' },
-            { id: '33', name: 'Armed Dragon LV7', type: 'monster', attack: 2800, defense: 2000, description: 'Evolution of Armed Dragon. Destroys 1 card on field.' },
-            { id: '34', name: 'Red-Eyes Darkness Metal Dragon', type: 'monster', attack: 2800, defense: 2400, description: 'When normal summoned, special summon 1 Dragon from GY.' },
-            { id: '35', name: 'Red-Eyes Wyvern', type: 'monster', attack: 1800, defense: 1600, description: 'When destroyed, special summon 1 Dragon from hand.' },
-            { id: '36', name: 'Red-Eyes Zombie Necro Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'Special summon from GY by banishing 3 Zombie monsters.' },
-            { id: '37', name: 'Red-Eyes Slash Dragon', type: 'monster', attack: 2500, defense: 2000, description: 'When attacking, destroy opponent monster with lower DEF.' },
-            { id: '38', name: 'Red-Eyes Retro Dragon', type: 'monster', attack: 2400, defense: 2000, description: 'Can attack all opponent monsters once each.' },
-            { id: '39', name: 'Red-Eyes Fusion', type: 'spell', attack: 0, defense: 0, description: 'Fusion: Special summon 1 Red-Eyes Fusion Monster.' },
-            { id: '40', name: 'Red-Eyes Spirit', type: 'trap', attack: 0, defense: 0, description: 'When opponent normal summons, special summon 1 Dragon.' }
-        ];
-
-        // DOM Elements
-        const deckBuilder = document.getElementById('cardPack');
-        const deckCount = document.getElementById('deckCount');
-        const startGameBtn = document.getElementById('startGame');
-        const gameScreen = document.getElementById('gameScreen');
-        const gameMessage = document.getElementById('gameMessage');
-        const playerLP = document.getElementById('playerLP');
-        const opponentLP = document.getElementById('opponentLP');
-        const playerHand = document.getElementById('playerHand');
-        const opponentHand = document.getElementById('opponentHand');
-        const playerField = document.getElementById('playerField');
-        const opponentField = document.getElementById('opponentField');
-        const nextPhaseBtn = document.getElementById('nextPhase');
-        const endTurnBtn = document.getElementById('endTurn');
-        const drawPhase = document.getElementById('drawPhase');
-        const mainPhase = document.getElementById('mainPhase');
-        const battlePhase = document.getElementById('battlePhase');
-        const endPhase = document.getElementById('endPhase');
-
-        // Initialize the game
-        function initGame() {
-            // Set up pack buttons
-            document.getElementById('starterPack').addEventListener('click', () => showPack('starter'));
-            document.getElementById('dragonPack').addEventListener('click', () => showPack('dragon'));
-            
-            // Set up game controls
-            startGameBtn.addEventListener('click', startGame);
-            nextPhaseBtn.addEventListener('click', nextPhase);
-            endTurnBtn.addEventListener('click', endTurn);
-            
-            // Show starter pack by default
-            showPack('starter');
+        let snake = [{x: 15, y: 10}];
+        let direction = {x: 0, y: -1};
+        let food = {x: 5, y: 5};
+        let enemies = [];
+        let bullets = [];
+        let score = 0;
+        let level = 1;
+        let lives = 3;
+        let gameSpeed = INITIAL_SPEED;
+        let gameRunning = false;
+        let gameLoop;
+        let enemyShootTimer;
+        let bulletMoveTimer;
+        
+        // DOM elements
+        const grid = document.getElementById('grid');
+        const scoreDisplay = document.getElementById('score');
+        const levelDisplay = document.getElementById('level');
+        const livesDisplay = document.getElementById('lives');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const finalLevelDisplay = document.getElementById('final-level');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        
+        // Initialize grid
+        function initGrid() {
+            grid.innerHTML = '';
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.id = `cell-${x}-${y}`;
+                    grid.appendChild(cell);
+                }
+            }
         }
-
-        // Show card pack
-        function showPack(packName) {
-            deckBuilder.innerHTML = '';
+        
+        // Generate random position
+        function getRandomPosition() {
+            return {
+                x: Math.floor(Math.random() * GRID_WIDTH),
+                y: Math.floor(Math.random() * GRID_HEIGHT)
+            };
+        }
+        
+        // Create food at random position
+        function createFood() {
+            let newFood;
+            let overlapping;
             
-            if (packName === 'starter') {
-                starterDeck.forEach(card => {
-                    const cardElement = createCardElement(card, false);
-                    cardElement.addEventListener('click', () => toggleCardInDeck(card));
-                    deckBuilder.appendChild(cardElement);
-                });
-            } else {
-                // Randomly select 5 cards from the dragon pool
-                const shuffled = [...dragonPool].sort(() => 0.5 - Math.random());
-                const selected = shuffled.slice(0, 5);
+            do {
+                overlapping = false;
+                newFood = getRandomPosition();
                 
-                selected.forEach(card => {
-                    const cardElement = createCardElement(card, false);
-                    cardElement.addEventListener('click', () => toggleCardInDeck(card));
-                    deckBuilder.appendChild(cardElement);
-                });
-            }
-            
-            updateDeckCounter();
-        }
-
-        // Create card element
-        function createCardElement(card, isHidden = false) {
-            const cardElement = document.createElement('div');
-            cardElement.className = 'card';
-            cardElement.dataset.id = card.id;
-            
-            if (isHidden) {
-                cardElement.innerHTML = `
-                    <div class="card-back">CARD</div>
-                `;
-                return cardElement;
-            }
-            
-            let icon = '⚔️';
-            if (card.type === 'spell') icon = '🔮';
-            if (card.type === 'trap') icon = '🛡️';
-            
-            cardElement.innerHTML = `
-                <div class="card-header">
-                    <div class="card-name">${card.name}</div>
-                    <div class="card-type">${card.type}</div>
-                </div>
-                <div class="card-image">
-                    <div class="card-icon">${icon}</div>
-                </div>
-                ${card.type === 'monster' ? `
-                <div class="card-stats">
-                    <div class="attack">ATK: ${card.attack}</div>
-                    <div class="defense">DEF: ${card.defense}</div>
-                </div>
-                ` : ''}
-                <div class="card-description">${card.description}</div>
-            `;
-            
-            return cardElement;
-        }
-
-        // Toggle card in deck
-        function toggleCardInDeck(card) {
-            const index = gameState.playerDeck.findIndex(c => c.id === card.id);
-            
-            if (index === -1) {
-                // Add card to deck
-                if (gameState.playerDeck.length < 40) {
-                    gameState.playerDeck.push(card);
-                }
-            } else {
-                // Remove card from deck
-                gameState.playerDeck.splice(index, 1);
-            }
-            
-            updateDeckCounter();
-            updateCardSelection(card.id);
-        }
-
-        // Update deck counter
-        function updateDeckCounter() {
-            deckCount.textContent = gameState.playerDeck.length;
-            startGameBtn.disabled = gameState.playerDeck.length < 20;
-        }
-
-        // Update card selection UI
-        function updateCardSelection(cardId) {
-            const cards = document.querySelectorAll(`.card[data-id="${cardId}"]`);
-            cards.forEach(card => {
-                if (gameState.playerDeck.some(c => c.id === cardId)) {
-                    card.classList.add('selected');
-                } else {
-                    card.classList.remove('selected');
-                }
-            });
-        }
-
-        // Start the game
-        function startGame() {
-            // Hide deck builder and show game screen
-            document.querySelector('.panel').classList.add('hidden');
-            gameScreen.classList.remove('hidden');
-            
-            // Create opponent deck (random 20 cards from all available)
-            const allCards = [...starterDeck, ...dragonPool];
-            gameState.opponentDeck = [...allCards].sort(() => Math.random() - 0.5).slice(0, 20);
-            
-            // Draw initial hands
-            drawCards(5, true);
-            drawCards(5, false);
-            
-            // Update UI
-            updateGameBoard();
-            updatePhaseIndicator();
-            gameMessage.textContent = 'Game started! Draw phase.';
-        }
-
-        // Draw cards
-        function drawCards(count, isPlayer) {
-            for (let i = 0; i < count; i++) {
-                if (isPlayer && gameState.playerDeck.length > 0) {
-                    const card = gameState.playerDeck.shift();
-                    gameState.playerHand.push(card);
-                } else if (!isPlayer && gameState.opponentDeck.length > 0) {
-                    const card = gameState.opponentDeck.shift();
-                    gameState.opponentHand.push(card);
-                }
-            }
-        }
-
-        // Update game board
-        function updateGameBoard() {
-            // Update life points
-            playerLP.textContent = gameState.playerLP;
-            opponentLP.textContent = gameState.opponentLP;
-            
-            // Update player hand
-            playerHand.innerHTML = '';
-            gameState.playerHand.forEach(card => {
-                const cardElement = createCardElement(card);
-                cardElement.addEventListener('click', () => selectCard(card));
-                playerHand.appendChild(cardElement);
-            });
-            
-            // Update opponent hand (hidden)
-            opponentHand.innerHTML = '';
-            gameState.opponentHand.forEach(() => {
-                const cardElement = createCardElement(null, true);
-                opponentHand.appendChild(cardElement);
-            });
-            
-            // Update player field
-            playerField.innerHTML = '';
-            gameState.playerField.forEach(card => {
-                const cardElement = createCardElement(card);
-                if (gameState.currentPhase === 'battle' && gameState.playerTurn) {
-                    cardElement.addEventListener('click', () => selectAttacker(card));
-                }
-                playerField.appendChild(cardElement);
-            });
-            
-            // Update opponent field
-            opponentField.innerHTML = '';
-            gameState.opponentField.forEach(card => {
-                const cardElement = createCardElement(card);
-                if (gameState.currentPhase === 'battle' && gameState.playerTurn && gameState.selectedCard) {
-                    cardElement.addEventListener('click', () => selectTarget(card));
-                }
-                opponentField.appendChild(cardElement);
-            });
-        }
-
-        // Select a card from hand
-        function selectCard(card) {
-            if (gameState.currentPhase !== 'main' || !gameState.playerTurn) return;
-            
-            // Remove from hand
-            const index = gameState.playerHand.findIndex(c => c.id === card.id);
-            if (index !== -1) {
-                gameState.playerHand.splice(index, 1);
-                gameState.playerField.push(card);
-                gameMessage.textContent = `Played ${card.name}!`;
-                updateGameBoard();
-            }
-        }
-
-        // Select attacker in battle phase
-        function selectAttacker(card) {
-            if (gameState.currentPhase !== 'battle' || !gameState.playerTurn) return;
-            
-            gameState.selectedCard = card;
-            gameMessage.textContent = `Selected ${card.name} to attack. Choose a target.`;
-            updateGameBoard();
-        }
-
-        // Select target for attack
-        function selectTarget(card) {
-            if (gameState.currentPhase !== 'battle' || !gameState.playerTurn || !gameState.selectedCard) return;
-            
-            gameState.targetCard = card;
-            
-            // Perform attack
-            const attacker = gameState.selectedCard;
-            const target = card;
-            
-            if (attacker.attack > target.defense) {
-                // Destroy opponent card
-                const index = gameState.opponentField.findIndex(c => c.id === target.id);
-                if (index !== -1) {
-                    gameState.opponentField.splice(index, 1);
-                }
-                gameMessage.textContent = `${attacker.name} destroyed ${target.name}!`;
-            } else if (attacker.attack < target.defense) {
-                // Destroy player card
-                const index = gameState.playerField.findIndex(c => c.id === attacker.id);
-                if (index !== -1) {
-                    gameState.playerField.splice(index, 1);
-                }
-                // Player takes damage
-                const damage = target.defense - attacker.attack;
-                gameState.playerLP = Math.max(0, gameState.playerLP - damage);
-                gameMessage.textContent = `${target.name} destroyed ${attacker.name}! You took ${damage} damage.`;
-            } else {
-                gameMessage.textContent = 'Attack and defense were equal. No cards destroyed.';
-            }
-            
-            gameState.selectedCard = null;
-            gameState.targetCard = null;
-            updateGameBoard();
-        }
-
-        // Next phase
-        function nextPhase() {
-            if (!gameState.playerTurn) return;
-            
-            switch (gameState.currentPhase) {
-                case 'draw':
-                    gameState.currentPhase = 'main';
-                    gameMessage.textContent = 'Main phase. Play cards from your hand.';
-                    break;
-                case 'main':
-                    gameState.currentPhase = 'battle';
-                    gameMessage.textContent = 'Battle phase. Attack with your monsters.';
-                    break;
-                case 'battle':
-                    gameState.currentPhase = 'end';
-                    gameMessage.textContent = 'End phase. Ending your turn.';
-                    setTimeout(endTurn, 1000);
-                    return;
-            }
-            
-            updatePhaseIndicator();
-            updateGameBoard();
-        }
-
-        // End turn
-        function endTurn() {
-            if (!gameState.playerTurn) return;
-            
-            // Switch to opponent turn
-            gameState.playerTurn = false;
-            gameState.currentPhase = 'draw';
-            gameMessage.textContent = 'Opponent turn. Drawing cards...';
-            updatePhaseIndicator();
-            
-            // Opponent draws
-            setTimeout(() => {
-                drawCards(1, false);
-                updateGameBoard();
-                gameMessage.textContent = 'Opponent playing cards...';
-                
-                // Opponent plays a card
-                setTimeout(() => {
-                    if (gameState.opponentHand.length > 0) {
-                        const card = gameState.opponentHand.shift();
-                        gameState.opponentField.push(card);
+                // Check if food overlaps with snake
+                for (const segment of snake) {
+                    if (segment.x === newFood.x && segment.y === newFood.y) {
+                        overlapping = true;
+                        break;
                     }
-                    updateGameBoard();
-                    gameMessage.textContent = 'Opponent attacking...';
-                    
-                    // Opponent attacks
-                    setTimeout(() => {
-                        if (gameState.opponentField.length > 0 && gameState.playerField.length > 0) {
-                            const attacker = gameState.opponentField[0];
-                            const target = gameState.playerField[0];
-                            
-                            if (attacker.attack > target.defense) {
-                                gameState.playerField.shift();
-                                const damage = attacker.attack - target.defense;
-                                gameState.playerLP = Math.max(0, gameState.playerLP - damage);
-                                gameMessage.textContent = `${attacker.name} destroyed ${target.name}! You took ${damage} damage.`;
-                            } else if (attacker.attack < target.defense) {
-                                gameState.opponentField.shift();
-                                const damage = target.defense - attacker.attack;
-                                gameState.opponentLP = Math.max(0, gameState.opponentLP - damage);
-                                gameMessage.textContent = `${target.name} destroyed ${attacker.name}! Opponent took ${damage} damage.`;
-                            } else {
-                                gameMessage.textContent = 'Attack and defense were equal. No cards destroyed.';
-                            }
-                        } else if (gameState.opponentField.length > 0) {
-                            // Direct attack
-                            const attacker = gameState.opponentField[0];
-                            gameState.playerLP = Math.max(0, gameState.playerLP - attacker.attack);
-                            gameMessage.textContent = `Direct attack! You took ${attacker.attack} damage.`;
-                        }
-                        
-                        updateGameBoard();
-                        
-                        // Check for win/lose
-                        if (gameState.playerLP <= 0) {
-                            gameMessage.textContent = 'You lose! Better luck next time.';
-                            return;
-                        }
-                        
-                        if (gameState.opponentLP <= 0) {
-                            gameMessage.textContent = 'You win! Congratulations!';
-                            return;
-                        }
-                        
-                        // Switch back to player turn
-                        setTimeout(() => {
-                            gameState.playerTurn = true;
-                            gameState.currentPhase = 'draw';
-                            drawCards(1, true);
-                            gameMessage.textContent = 'Your turn! Draw phase.';
-                            updatePhaseIndicator();
-                            updateGameBoard();
-                        }, 2000);
-                    }, 1500);
-                }, 1000);
-            }, 1000);
-        }
-
-        // Update phase indicator
-        function updatePhaseIndicator() {
-            drawPhase.classList.remove('active');
-            mainPhase.classList.remove('active');
-            battlePhase.classList.remove('active');
-            endPhase.classList.remove('active');
+                }
+                
+                // Check if food overlaps with enemies
+                for (const enemy of enemies) {
+                    if (enemy.x === newFood.x && enemy.y === newFood.y) {
+                        overlapping = true;
+                        break;
+                    }
+                }
+            } while (overlapping);
             
-            switch (gameState.currentPhase) {
-                case 'draw':
-                    drawPhase.classList.add('active');
+            food = newFood;
+        }
+        
+        // Create enemies based on level
+        function createEnemies() {
+            enemies = [];
+            const enemyCount = Math.min(3 + level, 10); // Max 10 enemies
+            
+            for (let i = 0; i < enemyCount; i++) {
+                let newEnemy;
+                let overlapping;
+                
+                do {
+                    overlapping = false;
+                    newEnemy = getRandomPosition();
+                    
+                    // Check if enemy overlaps with snake
+                    for (const segment of snake) {
+                        if (segment.x === newEnemy.x && segment.y === newEnemy.y) {
+                            overlapping = true;
+                            break;
+                        }
+                    }
+                    
+                    // Check if enemy overlaps with food
+                    if (newEnemy.x === food.x && newEnemy.y === food.y) {
+                        overlapping = true;
+                    }
+                    
+                    // Check if enemy overlaps with other enemies
+                    for (const enemy of enemies) {
+                        if (enemy.x === newEnemy.x && enemy.y === newEnemy.y) {
+                            overlapping = true;
+                            break;
+                        }
+                    }
+                } while (overlapping);
+                
+                enemies.push({
+                    ...newEnemy,
+                    id: Date.now() + i
+                });
+            }
+        }
+        
+        // Draw game elements
+        function draw() {
+            // Clear grid
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                cell.className = 'cell';
+            });
+            
+            // Draw snake
+            snake.forEach((segment, index) => {
+                const cell = document.getElementById(`cell-${segment.x}-${segment.y}`);
+                if (cell) {
+                    cell.classList.add(index === 0 ? 'snake-head' : 'snake');
+                }
+            });
+            
+            // Draw food
+            const foodCell = document.getElementById(`cell-${food.x}-${food.y}`);
+            if (foodCell) {
+                foodCell.classList.add('food');
+            }
+            
+            // Draw enemies
+            enemies.forEach(enemy => {
+                const enemyCell = document.getElementById(`cell-${enemy.x}-${enemy.y}`);
+                if (enemyCell) {
+                    enemyCell.classList.add('enemy');
+                }
+            });
+            
+            // Draw bullets
+            bullets.forEach(bullet => {
+                // Calculate bullet position in grid
+                const gridX = Math.floor(bullet.x);
+                const gridY = Math.floor(bullet.y);
+                
+                if (gridX >= 0 && gridX < GRID_WIDTH && gridY >= 0 && gridY < GRID_HEIGHT) {
+                    const bulletCell = document.getElementById(`cell-${gridX}-${gridY}`);
+                    if (bulletCell) {
+                        bulletCell.classList.add('bullet');
+                    }
+                }
+            });
+        }
+        
+        // Move snake
+        function moveSnake() {
+            if (!gameRunning) return;
+            
+            const head = {...snake[0]};
+            head.x += direction.x;
+            head.y += direction.y;
+            
+            // Check wall collision
+            if (head.x < 0 || head.x >= GRID_WIDTH || head.y < 0 || head.y >= GRID_HEIGHT) {
+                loseLife();
+                return;
+            }
+            
+            // Check self collision
+            for (let i = 0; i < snake.length; i++) {
+                if (snake[i].x === head.x && snake[i].y === head.y) {
+                    loseLife();
+                    return;
+                }
+            }
+            
+            // Add new head
+            snake.unshift(head);
+            
+            // Check food collision
+            if (head.x === food.x && head.y === food.y) {
+                // Increase score
+                score += 10;
+                scoreDisplay.textContent = score;
+                
+                // Create new food
+                createFood();
+                
+                // Level up every 100 points
+                if (score % 100 === 0) {
+                    levelUp();
+                }
+            } else {
+                // Remove tail if no food eaten
+                snake.pop();
+            }
+            
+            draw();
+        }
+        
+        // Move bullets
+        function moveBullets() {
+            if (!gameRunning) return;
+            
+            // Move each bullet
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                bullet.x += bullet.dx * BULLET_SPEED;
+                bullet.y += bullet.dy * BULLET_SPEED;
+                
+                // Remove bullets that are out of bounds
+                if (bullet.x < 0 || bullet.x >= GRID_WIDTH || bullet.y < 0 || bullet.y >= GRID_HEIGHT) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+                
+                // Check collision with snake
+                const gridX = Math.floor(bullet.x);
+                const gridY = Math.floor(bullet.y);
+                
+                for (const segment of snake) {
+                    if (segment.x === gridX && segment.y === gridY) {
+                        loseLife();
+                        bullets.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+            
+            draw();
+        }
+        
+        // Enemy shooting
+        function enemyShoot() {
+            if (!gameRunning) return;
+            
+            const head = snake[0];
+            
+            enemies.forEach(enemy => {
+                // Calculate direction to snake head
+                const dx = head.x - enemy.x;
+                const dy = head.y - enemy.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 0) {
+                    bullets.push({
+                        x: enemy.x,
+                        y: enemy.y,
+                        dx: dx / distance,
+                        dy: dy / distance
+                    });
+                }
+            });
+        }
+        
+        // Level up
+        function levelUp() {
+            level++;
+            levelDisplay.textContent = level;
+            
+            // Increase difficulty
+            gameSpeed = Math.max(50, INITIAL_SPEED - (level * 10));
+            
+            // Create new enemies
+            createEnemies();
+            
+            // Flash effect
+            document.querySelector('.game-board').classList.add('flash');
+            setTimeout(() => {
+                document.querySelector('.game-board').classList.remove('flash');
+            }, 300);
+        }
+        
+        // Lose a life
+        function loseLife() {
+            lives--;
+            livesDisplay.textContent = lives;
+            
+            if (lives <= 0) {
+                gameOver();
+            } else {
+                // Reset snake position
+                snake = [{x: 15, y: 10}];
+                direction = {x: 0, y: -1};
+                
+                // Flash effect
+                document.querySelector('.game-board').classList.add('flash');
+                setTimeout(() => {
+                    document.querySelector('.game-board').classList.remove('flash');
+                }, 300);
+            }
+        }
+        
+        // Game over
+        function gameOver() {
+            gameRunning = false;
+            clearInterval(gameLoop);
+            clearInterval(enemyShootTimer);
+            clearInterval(bulletMoveTimer);
+            
+            finalScoreDisplay.textContent = score;
+            finalLevelDisplay.textContent = level;
+            gameOverScreen.classList.remove('hidden');
+        }
+        
+        // Start game
+        function startGame() {
+            // Reset game state
+            snake = [{x: 15, y: 10}];
+            direction = {x: 0, y: -1};
+            score = 0;
+            level = 1;
+            lives = 3;
+            gameSpeed = INITIAL_SPEED;
+            bullets = [];
+            
+            // Update displays
+            scoreDisplay.textContent = score;
+            levelDisplay.textContent = level;
+            livesDisplay.textContent = lives;
+            
+            // Create initial elements
+            createFood();
+            createEnemies();
+            
+            // Hide screens
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            
+            // Start game loop
+            gameRunning = true;
+            gameLoop = setInterval(moveSnake, gameSpeed);
+            enemyShootTimer = setInterval(enemyShoot, 1000);
+            bulletMoveTimer = setInterval(moveBullets, 100);
+            
+            draw();
+        }
+        
+        // Reset game
+        function resetGame() {
+            clearInterval(gameLoop);
+            clearInterval(enemyShootTimer);
+            clearInterval(bulletMoveTimer);
+            gameRunning = false;
+            startScreen.classList.remove('hidden');
+            gameOverScreen.classList.add('hidden');
+        }
+        
+        // Toggle pause
+        function togglePause() {
+            if (!gameRunning) return;
+            
+            if (gameLoop) {
+                clearInterval(gameLoop);
+                clearInterval(enemyShootTimer);
+                clearInterval(bulletMoveTimer);
+                gameRunning = false;
+                pauseBtn.textContent = 'Resume';
+            } else {
+                gameRunning = true;
+                gameLoop = setInterval(moveSnake, gameSpeed);
+                enemyShootTimer = setInterval(enemyShoot, 1000);
+                bulletMoveTimer = setInterval(moveBullets, 100);
+                pauseBtn.textContent = 'Pause';
+            }
+        }
+        
+        // Handle keyboard input
+        function handleKeydown(e) {
+            if (!gameRunning) return;
+            
+            switch (e.key) {
+                case 'ArrowUp':
+                    if (direction.y === 0) direction = {x: 0, y: -1};
                     break;
-                case 'main':
-                    mainPhase.classList.add('active');
+                case 'ArrowDown':
+                    if (direction.y === 0) direction = {x: 0, y: 1};
                     break;
-                case 'battle':
-                    battlePhase.classList.add('active');
+                case 'ArrowLeft':
+                    if (direction.x === 0) direction = {x: -1, y: 0};
                     break;
-                case 'end':
-                    endPhase.classList.add('active');
+                case 'ArrowRight':
+                    if (direction.x === 0) direction = {x: 1, y: 0};
                     break;
             }
         }
-
-        // Initialize the game when page loads
-        window.onload = initGame;
+        
+        // Event listeners
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+        pauseBtn.addEventListener('click', togglePause);
+        resetBtn.addEventListener('click', resetGame);
+        document.addEventListener('keydown', handleKeydown);
+        
+        // Initialize game
+        initGrid();
     </script>
 </body>
 </html>
