@@ -13,7 +13,7 @@
         }
         
         body {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
             color: #fff;
             min-height: 100vh;
             padding: 20px;
@@ -58,7 +58,7 @@
         }
         
         .panel {
-            background: rgba(25, 25, 50, 0.7);
+            background: rgba(25, 25, 50, 0.8);
             border-radius: 15px;
             padding: 20px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
@@ -305,6 +305,14 @@
             color: #a9d6e5;
             font-size: 0.9rem;
         }
+        
+        .pack-info {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -317,6 +325,12 @@
         <div class="game-container">
             <div class="panel">
                 <h2 class="panel-title">Deck Builder</h2>
+                
+                <div class="pack-info">
+                    <p><strong>Starter Deck:</strong> 20 cards with strong synergy</p>
+                    <p><strong>Dragon Pack:</strong> 5 random cards from a pool of 20</p>
+                </div>
+                
                 <div class="pack-selector">
                     <button id="starterPack" class="pack-btn btn-primary">Starter Pack</button>
                     <button id="dragonPack" class="pack-btn btn-secondary">Dragon Pack</button>
@@ -406,24 +420,51 @@
         };
 
         // Card data
-        const cardPacks = {
-            starter: [
-                { id: '1', name: 'Blue-Eyes White Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'This legendary dragon is a powerful engine of destruction.' },
-                { id: '2', name: 'Dark Magician', type: 'monster', attack: 2500, defense: 2100, description: 'The ultimate wizard in terms of attack and defense.' },
-                { id: '3', name: 'Summoned Skull', type: 'monster', attack: 2500, defense: 1200, description: 'A fiend with dark powers for confusing the enemy.' },
-                { id: '4', name: 'Mystical Elf', type: 'monster', attack: 800, defense: 2000, description: 'A delicate elf that lacks offense, but has a terrific defense.' },
-                { id: '5', name: 'Celtic Guardian', type: 'monster', attack: 1400, defense: 1200, description: 'An elf who learned to wield a sword, he baffles enemies with lightning-swift attacks.' },
-                { id: '6', name: 'Fissure', type: 'spell', attack: 0, defense: 0, description: 'Destroy the 1 face-up monster your opponent controls that has the lowest ATK.' },
-                { id: '7', name: 'Mirror Force', type: 'trap', attack: 0, defense: 0, description: 'When your opponent declares an attack, destroy all Attack Position monsters they control.' }
-            ],
-            dragon: [
-                { id: '8', name: 'Red-Eyes B. Dragon', type: 'monster', attack: 2400, defense: 2000, description: 'A ferocious dragon with a deadly attack.' },
-                { id: '9', name: 'Meteor Dragon', type: 'monster', attack: 1800, defense: 2000, description: 'A dragon created from a meteorite.' },
-                { id: '10', name: 'B. Skull Dragon', type: 'monster', attack: 2500, defense: 2000, description: 'A powerful dragon born from the fusion of two dragons.' },
-                { id: '11', name: 'Dragon Treasure', type: 'spell', attack: 0, defense: 0, description: 'Target 1 Dragon-Type monster you control; equip this card to that target.' },
-                { id: '12', name: 'Dragon Capture Jar', type: 'trap', attack: 0, defense: 0, description: 'Flip all face-up Dragon-Type monsters on the field into face-down Defense Position.' }
-            ]
-        };
+        const starterDeck = [
+            { id: '1', name: 'Polymerization', type: 'spell', attack: 0, defense: 0, description: 'Fusion: Combine 2 monsters to create a powerful fusion monster.' },
+            { id: '2', name: 'Dragon Fusion', type: 'spell', attack: 0, defense: 0, description: 'Special fusion for dragon-type monsters.' },
+            { id: '3', name: 'Mystic Plasma Zone', type: 'spell', attack: 0, defense: 0, description: 'Increases ATK of all Dragon-Type monsters by 500.' },
+            { id: '4', name: 'Dragon Treasure', type: 'spell', attack: 0, defense: 0, description: 'Equip to a Dragon-Type monster. Increases ATK by 300.' },
+            { id: '5', name: 'Mirror Force', type: 'trap', attack: 0, defense: 0, description: 'When opponent declares attack, destroy all attacking monsters.' },
+            { id: '6', name: 'Dragon Capture Jar', type: 'trap', attack: 0, defense: 0, description: 'Flip all face-up Dragon-Type monsters to Defense Position.' },
+            { id: '7', name: 'Blue-Eyes White Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'This legendary dragon is a powerful engine of destruction.' },
+            { id: '8', name: 'Blue-Eyes Ultimate Dragon', type: 'monster', attack: 4500, defense: 3800, description: 'Fusion: 3 Blue-Eyes White Dragons. The ultimate dragon.' },
+            { id: '9', name: 'White Stone of Ancients', type: 'monster', attack: 300, defense: 500, description: 'When destroyed, special summon 1 Dragon-Type monster from deck.' },
+            { id: '10', name: 'Sage with Eyes of Blue', type: 'monster', attack: 1800, defense: 200, description: 'Can special summon Blue-Eyes White Dragon from hand.' },
+            { id: '11', name: 'Blue-Eyes Spirit Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'Cannot be destroyed by battle. Prevents multiple attacks.' },
+            { id: '12', name: 'Azure-Eyes Silver Dragon', type: 'monster', attack: 2600, defense: 2100, description: 'When normal summoned, special summon 1 Dragon from hand.' },
+            { id: '13', name: 'Galaxy-Eyes Photon Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'When attacking, destroy opponent monster with lower ATK.' },
+            { id: '14', name: 'Neo Blue-Eyes Ultimate Dragon', type: 'monster', attack: 4500, defense: 3800, description: 'Can attack all opponent monsters once each.' },
+            { id: '15', name: 'Blue-Eyes Chaos MAX Dragon', type: 'monster', attack: 4000, defense: 3500, description: 'Cannot be destroyed by card effects. ATK increases by 1000.' },
+            { id: '16', name: 'Blue-Eyes Alternative White Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'Special summon from hand by banishing 1 Dragon.' },
+            { id: '17', name: 'Blue-Eyes Twin Burst Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'Can attack twice during the same Battle Phase.' },
+            { id: '18', name: 'Blue-Eyes Solid Dragon', type: 'monster', attack: 2500, defense: 3000, description: 'Cannot be targeted for attacks if you control a Dragon.' },
+            { id: '19', name: 'Blue-Eyes Chaos Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'When normal summoned, destroy all opponent spells/traps.' },
+            { id: '20', name: 'Blue-Eyes Toon Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'Can attack directly if opponent controls no monsters.' }
+        ];
+
+        const dragonPool = [
+            { id: '21', name: 'Red-Eyes B. Dragon', type: 'monster', attack: 2400, defense: 2000, description: 'A ferocious dragon with a deadly attack.' },
+            { id: '22', name: 'Meteor Dragon', type: 'monster', attack: 1800, defense: 2000, description: 'A dragon created from a meteorite.' },
+            { id: '23', name: 'B. Skull Dragon', type: 'monster', attack: 2500, defense: 2000, description: 'A powerful dragon born from the fusion of two dragons.' },
+            { id: '24', name: 'Darkfire Dragon', type: 'monster', attack: 1500, defense: 1250, description: 'A dragon with a dark flame that burns any opponent.' },
+            { id: '25', name: 'Curse of Dragon', type: 'monster', attack: 2000, defense: 1500, description: 'A wicked dragon that taps into dark forces.' },
+            { id: '26', name: 'Tri-Horned Dragon', type: 'monster', attack: 2850, defense: 2350, description: 'A powerful dragon with three sharp horns.' },
+            { id: '27', name: 'Serpent Night Dragon', type: 'monster', attack: 2350, defense: 2400, description: 'A dragon that flies through the night sky.' },
+            { id: '28', name: 'B. Dragon Jungle King', type: 'monster', attack: 2100, defense: 1800, description: 'A dragon that rules the jungle with an iron fist.' },
+            { id: '29', name: 'Twin-Headed Behemoth', type: 'monster', attack: 1500, defense: 1200, description: 'A dragon with two heads that attacks twice.' },
+            { id: '30', name: 'Koumori Dragon', type: 'monster', attack: 1500, defense: 1200, description: 'A bat-like dragon that swoops down on enemies.' },
+            { id: '31', name: 'Cave Dragon', type: 'monster', attack: 2000, defense: 1500, description: 'A dragon that dwells in dark caves.' },
+            { id: '32', name: 'Armed Dragon LV5', type: 'monster', attack: 2400, defense: 1700, description: 'A dragon with a powerful spear.' },
+            { id: '33', name: 'Armed Dragon LV7', type: 'monster', attack: 2800, defense: 2000, description: 'Evolution of Armed Dragon. Destroys 1 card on field.' },
+            { id: '34', name: 'Red-Eyes Darkness Metal Dragon', type: 'monster', attack: 2800, defense: 2400, description: 'When normal summoned, special summon 1 Dragon from GY.' },
+            { id: '35', name: 'Red-Eyes Wyvern', type: 'monster', attack: 1800, defense: 1600, description: 'When destroyed, special summon 1 Dragon from hand.' },
+            { id: '36', name: 'Red-Eyes Zombie Necro Dragon', type: 'monster', attack: 3000, defense: 2500, description: 'Special summon from GY by banishing 3 Zombie monsters.' },
+            { id: '37', name: 'Red-Eyes Slash Dragon', type: 'monster', attack: 2500, defense: 2000, description: 'When attacking, destroy opponent monster with lower DEF.' },
+            { id: '38', name: 'Red-Eyes Retro Dragon', type: 'monster', attack: 2400, defense: 2000, description: 'Can attack all opponent monsters once each.' },
+            { id: '39', name: 'Red-Eyes Fusion', type: 'spell', attack: 0, defense: 0, description: 'Fusion: Special summon 1 Red-Eyes Fusion Monster.' },
+            { id: '40', name: 'Red-Eyes Spirit', type: 'trap', attack: 0, defense: 0, description: 'When opponent normal summons, special summon 1 Dragon.' }
+        ];
 
         // DOM Elements
         const deckBuilder = document.getElementById('cardPack');
@@ -462,13 +503,24 @@
         // Show card pack
         function showPack(packName) {
             deckBuilder.innerHTML = '';
-            const pack = cardPacks[packName];
             
-            pack.forEach(card => {
-                const cardElement = createCardElement(card, false);
-                cardElement.addEventListener('click', () => toggleCardInDeck(card));
-                deckBuilder.appendChild(cardElement);
-            });
+            if (packName === 'starter') {
+                starterDeck.forEach(card => {
+                    const cardElement = createCardElement(card, false);
+                    cardElement.addEventListener('click', () => toggleCardInDeck(card));
+                    deckBuilder.appendChild(cardElement);
+                });
+            } else {
+                // Randomly select 5 cards from the dragon pool
+                const shuffled = [...dragonPool].sort(() => 0.5 - Math.random());
+                const selected = shuffled.slice(0, 5);
+                
+                selected.forEach(card => {
+                    const cardElement = createCardElement(card, false);
+                    cardElement.addEventListener('click', () => toggleCardInDeck(card));
+                    deckBuilder.appendChild(cardElement);
+                });
+            }
             
             updateDeckCounter();
         }
@@ -552,8 +604,8 @@
             document.querySelector('.panel').classList.add('hidden');
             gameScreen.classList.remove('hidden');
             
-            // Create opponent deck
-            const allCards = [...cardPacks.starter, ...cardPacks.dragon];
+            // Create opponent deck (random 20 cards from all available)
+            const allCards = [...starterDeck, ...dragonPool];
             gameState.opponentDeck = [...allCards].sort(() => Math.random() - 0.5).slice(0, 20);
             
             // Draw initial hands
